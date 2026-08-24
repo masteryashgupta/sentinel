@@ -214,12 +214,30 @@ def _safe_json_parse(text: str) -> dict:
 
 def llm_summarize_report(report_data: dict) -> dict | None:
     """Uses LLM to summarize the case details and explain the risk factors."""
+    
+    # Trim data to essential fields to save prompt tokens and stay under TPM limit
+    trimmed_data = {
+        "fraud_score": report_data.get("fraud_score"),
+        "category": report_data.get("category"),
+        "subject": report_data.get("subject"),
+        "from_address": report_data.get("from_address"),
+        "from_display_name": report_data.get("from_display_name"),
+        "authentication": {
+            "spf": report_data.get("spf_result"),
+            "dkim": report_data.get("dkim_result"),
+            "dmarc": report_data.get("dmarc_result")
+        },
+        "header_anomalies": report_data.get("header_anomalies", []),
+        "origin_ip": report_data.get("origin_ip"),
+        "attribution_category": report_data.get("attribution_category")
+    }
+    
     prompt = (
         "You are a senior cybersecurity analyst reviewing a forensic email report. "
         "Summarize the findings in 2-3 concise paragraphs, intended for another security analyst. "
         "Highlight the most critical anomalies, explain the likely attack vector (e.g., BEC, phishing, credential harvesting), "
         "and give a final verdict on why this email was flagged with its current score.\n\n"
-        f"Report Data:\n{json.dumps(report_data, indent=2)}\n\n"
+        f"Report Data:\n{json.dumps(trimmed_data, indent=2)}\n\n"
         "Respond ONLY as JSON: "
         '{"summary": "Your detailed 2-3 paragraph summary here..."}'
     )
@@ -233,7 +251,7 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                     "model": "qwen/qwen3.6-27b",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.2,
-                    "max_tokens": 4096,
+                    "max_tokens": 2048,
                 },
                 timeout=45,
             )
