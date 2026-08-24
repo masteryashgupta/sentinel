@@ -23,7 +23,9 @@ export const mlHttpAgent = new http.Agent({
 });
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["https://masteryashgupta.github.io", "http://localhost:5173"]
+}));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {
