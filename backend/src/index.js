@@ -12,6 +12,13 @@ import retentionRouter from "./routes/retention.js";
 
 dotenv.config();
 
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
+
 // Shared keep-alive HTTP agent for all outbound calls (node-fetch to ML service).
 // Prevents "socket hang up" / ECONNRESET when multiple /analyze requests hit the
 // ML service concurrently — reuses TCP connections instead of opening a new one per request.
@@ -43,7 +50,7 @@ app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = parseInt(process.env.PORT || "4000", 10);
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Sentinel backend running on port ${PORT}`);
 });
