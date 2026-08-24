@@ -100,10 +100,10 @@ async def analyze_email(file: UploadFile = File(...)):
 
     # ── Step 4: Rule-based + LLM scoring (pure CPU/regex — run inline) ─────────
     rule_result = detection.rule_based_score(parsed.get("subject"), parsed.get("body_text"))
-    llm_result  = detection.llm_classify(parsed.get("subject"), parsed.get("body_text"))
+    llm_result  = detection.llm_classify(parsed.get("subject"), parsed.get("body_text"), auth)
 
     # ── Step 5: Aggregate into one explainable score ───────────────────────────
-    scoring = detection.aggregate_score(rule_result, llm_result, anomalies, domain_intel, ip_intel)
+    scoring = detection.aggregate_score(rule_result, llm_result, anomalies, domain_intel, ip_intel, auth)
 
     # ── Step 6: Extract correlation indicators ─────────────────────────────────
     indicators = []

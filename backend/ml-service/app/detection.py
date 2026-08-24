@@ -135,14 +135,22 @@ def _looks_like_lookalike(url: str) -> bool:
     return False
 
 
-def llm_classify(subject: str, body: str) -> dict | None:
+def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
     """Optional LLM pass for nuanced classification. Returns None if no key configured."""
+    spf = auth.get("spf", "unknown")
+    dkim = auth.get("dkim", "unknown")
+    dmarc = auth.get("dmarc", "unknown")
+
     prompt = (
         "You are a cybersecurity analyst. Classify this email as one of: "
         "legitimate, suspicious, impersonation, phishing, business_email_compromise. "
         "Also list up to 3 short phrases (verbatim, under 8 words) that most influenced your decision, "
         "and give a confidence score 0-100.\n\n"
         f"Subject: {subject}\n\nBody:\n{(body or '')[:3000]}\n\n"
+        f"Authentication results for this email: SPF={spf}, DKIM={dkim}, DMARC={dmarc}. "
+        "A message that passes all three checks is cryptographically verified as coming from an "
+        "authorized server for its claimed domain — weigh this heavily when assessing impersonation risk, "
+        "since impersonation typically requires spoofing that these checks would catch.\n\n"
         "Respond ONLY as JSON: "
         '{"category": "...", "confidence": 0, "flagged_phrases": ["...", "..."], "reasoning": "..."}'
     )
@@ -191,20 +199,29 @@ def _safe_json_parse(text: str) -> dict:
 
 def aggregate_score(rule_result: dict, llm_result: dict | None,
                       header_anomalies: list, domain_intel: dict,
-                      ip_intel: dict) -> dict:
+                      ip_intel: dict, auth: dict) -> dict:
     """
     Combine all signals into one explainable fraud score.
     Transparent weighting — every contributing factor is listed, not a black box.
     """
     score = rule_result["rule_score"] * 0.4  # rules contribute up to 40 pts
 
+    high_sev_headers = [a for a in header_anomalies if a.get("severity") == "high"]
+
     if llm_result and "confidence" in llm_result:
-        score += llm_result["confidence"] * 0.4  # LLM contributes up to 40 pts
+        llm_points = llm_result["confidence"] * 0.4
+        
+        # Trust hierarchy: cryptographic verification outranks LLM text analysis.
+        # If fully authenticated, rule-clean, and no high-severity headers, cap LLM influence.
+        fully_auth = auth.get("spf") == "pass" and auth.get("dkim") == "pass" and auth.get("dmarc") == "pass"
+        if fully_auth and len(high_sev_headers) == 0 and rule_result["rule_score"] <= 10:
+            llm_points = min(llm_points, 15)  # Cap LLM contribution to 15 points
+            
+        score += llm_points
     else:
         # no LLM available — redistribute weight to rules so score isn't artificially low
         score = rule_result["rule_score"] * 0.7
 
-    high_sev_headers = [a for a in header_anomalies if a.get("severity") == "high"]
     score += min(20, len(high_sev_headers) * 7)  # header anomalies contribute up to 20 pts
 
     if domain_intel.get("is_newly_registered"):
