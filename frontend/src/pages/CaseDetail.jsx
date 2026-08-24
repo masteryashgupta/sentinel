@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network } from "lucide-react";
-import { getCase, updateCaseStatus, reportUrl, getCaseAuditLog } from "../lib/api";
+import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network, Cpu } from "lucide-react";
+import { getCase, updateCaseStatus, reportUrl, getCaseAuditLog, getCaseAISummary } from "../lib/api";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -17,6 +17,8 @@ export default function CaseDetail() {
   const [updating, setUpdating] = useState(false);
   const [auditLog, setAuditLog] = useState([]);
   const [role, setRole] = useState("investigator");
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -33,11 +35,28 @@ export default function CaseDetail() {
       ]);
       setC(caseData);
       setAuditLog(logData);
+      setAiSummary(null); // Reset summary when case reloads
     } catch (e) {
       setError("Failed to load case details.");
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateSummary = async () => {
+    setAiLoading(true);
+    try {
+      const result = await getCaseAISummary(id);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setAiSummary(result.summary);
+    } catch (e) {
+      console.error(e);
+      setAiSummary("Failed to generate AI summary: " + e.message);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -196,6 +215,29 @@ export default function CaseDetail() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-6 space-y-4 md:col-span-2">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+            <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Cpu className="text-[var(--accent)]" size={18} />
+              AI Report Analysis
+            </h3>
+            {!aiSummary && (
+              <Button size="sm" onClick={handleGenerateSummary} disabled={aiLoading} icon={Cpu}>
+                {aiLoading ? "Analyzing..." : "Generate AI Analysis"}
+              </Button>
+            )}
+          </div>
+          {aiSummary ? (
+            <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
+              {aiSummary}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)] py-4 text-center">
+              Generate an AI summary for an analyst-friendly overview of this report's findings.
+            </p>
+          )}
+        </Card>
+
         <Card className="p-6 space-y-4">
           <h3 className="text-base font-bold text-[var(--text-primary)] border-b border-[var(--border)] pb-3">Header fields</h3>
           <div className="space-y-3">

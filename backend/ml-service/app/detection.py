@@ -207,6 +207,51 @@ def _safe_json_parse(text: str) -> dict:
         return {"raw_response": text}
 
 
+def llm_summarize_report(report_data: dict) -> dict | None:
+    """Uses LLM to summarize the case details and explain the risk factors."""
+    prompt = (
+        "You are a senior cybersecurity analyst reviewing a forensic email report. "
+        "Summarize the findings in 2-3 concise paragraphs, intended for another security analyst. "
+        "Highlight the most critical anomalies, explain the likely attack vector (e.g., BEC, phishing, credential harvesting), "
+        "and give a final verdict on why this email was flagged with its current score.\n\n"
+        f"Report Data:\n{json.dumps(report_data, indent=2)}\n\n"
+        "Respond ONLY as JSON: "
+        '{"summary": "Your detailed 2-3 paragraph summary here..."}'
+    )
+
+    if GROQ_API_KEY:
+        try:
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2,
+                },
+                timeout=15,
+            )
+            content = resp.json()["choices"][0]["message"]["content"]
+            return _safe_json_parse(content)
+        except Exception as e:
+            return {"error": str(e)}
+
+    if GEMINI_API_KEY:
+        try:
+            resp = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
+                json={"contents": [{"parts": [{"text": prompt}]}]},
+                timeout=15,
+            )
+            content = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+            return _safe_json_parse(content)
+        except Exception as e:
+            return {"error": str(e)}
+
+    return {"error": "No LLM API key configured"}
+
+
 def aggregate_score(rule_result: dict, llm_result: dict | None,
                       header_anomalies: list, domain_intel: dict,
                       ip_intel: dict, auth: dict) -> dict:

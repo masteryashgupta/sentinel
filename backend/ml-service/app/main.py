@@ -154,3 +154,18 @@ async def analyze_email(file: UploadFile = File(...)):
         "scoring":    scoring,
         "indicators": indicators,
     }
+
+
+@app.post("/summarize-report")
+async def summarize_report(report_data: dict):
+    """
+    Summarize the case report using the configured LLM.
+    """
+    if not GROQ_API_KEY and not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="No LLM API key configured")
+    
+    result = detection.llm_summarize_report(report_data)
+    if "error" in result:
+        raise HTTPException(status_code=502, detail=result["error"])
+        
+    return result

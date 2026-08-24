@@ -29,6 +29,12 @@ export async function getCaseAuditLog(id) {
   return res.json();
 }
 
+export async function getCaseAISummary(id) {
+  const res = await fetch(`${API_URL}/api/cases/${id}/ai-summary`);
+  if (!res.ok) throw new Error("Failed to generate AI summary");
+  return res.json();
+}
+
 export async function updateCaseStatus(id, status, reviewed_by) {
   const res = await fetch(`${API_URL}/api/cases/${id}/status`, {
     method: "PATCH",

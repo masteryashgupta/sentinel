@@ -175,6 +175,47 @@ router.get("/:id/audit-log", async (req, res) => {
 });
 
 
+/** GET /api/cases/:id/ai-summary — fetch AI summary for the case */
+router.get("/:id/ai-summary", async (req, res) => {
+  try {
+    // 1. Fetch case details
+    const { data: caseData, error } = await supabase
+      .from("cases")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error) return res.status(404).json({ error: "Case not found" });
+
+    // 2. Fetch indicators
+    const { data: indicators } = await supabase
+      .from("indicators")
+      .select("*")
+      .eq("case_id", req.params.id);
+
+    const reportData = { ...caseData, indicators };
+
+    // 3. Call ML service
+    const mlResponse = await fetch(`${ML_SERVICE_URL}/summarize-report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(reportData),
+    });
+
+    if (!mlResponse.ok) {
+      const errText = await mlResponse.text();
+      return res.status(502).json({ error: "ML service error", detail: errText });
+    }
+
+    const result = await mlResponse.json();
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate AI summary", detail: err.message });
+  }
+});
+
+
 /** PATCH /api/cases/:id/status — analyst updates case status */
 router.patch("/:id/status", async (req, res) => {
   const { status, reviewed_by } = req.body;
