@@ -171,7 +171,7 @@ def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
                 json={
-                    "model": "llama-3.1-8b-instant",
+                    "model": "llama3-8b-8192",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.1,
                 },
@@ -225,7 +225,7 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
                 json={
-                    "model": "llama-3.1-8b-instant",
+                    "model": "llama3-8b-8192",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.2,
                 },
