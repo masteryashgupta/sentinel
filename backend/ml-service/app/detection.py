@@ -171,10 +171,10 @@ def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
                 json={
-                    "model": "qwen/qwen3.6-27b",
+                    "model": "openai/gpt-oss-20b",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.1,
-                    "max_tokens": 4096,
+                    "max_tokens": 1024,
                 },
                 timeout=45,
             )
@@ -248,10 +248,10 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
                 json={
-                    "model": "qwen/qwen3.6-27b",
+                    "model": "openai/gpt-oss-20b",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.2,
-                    "max_tokens": 2048,
+                    "max_tokens": 1024,
                 },
                 timeout=45,
             )
