@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UploadCloud, File, AlertCircle, Shield, Check, X, ShieldAlert, Cpu } from "lucide-react";
-import { analyzeEmail } from "../lib/api";
+import { analyzeEmail, getCaseAISummary } from "../lib/api";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -91,6 +91,24 @@ export default function Analyze() {
 
 function ResultView({ result }) {
   const { analysis } = result;
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleGenerateSummary = async () => {
+    setAiLoading(true);
+    try {
+      const res = await getCaseAISummary(result.id);
+      if (res.error) {
+        throw new Error(res.error);
+      }
+      setAiSummary(res.summary || res.raw_response || "Received an empty response from AI.");
+    } catch (e) {
+      console.error(e);
+      setAiSummary("Failed to generate AI summary: " + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const getScoreBadge = (score, category) => {
     let variant = "success";
@@ -136,6 +154,34 @@ function ResultView({ result }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="p-6 space-y-4 md:col-span-2">
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+            <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Cpu className="text-[var(--accent)]" size={18} />
+              AI Report Analysis
+            </h3>
+            {!aiSummary && (
+              <Button size="sm" onClick={handleGenerateSummary} disabled={aiLoading} icon={Cpu}>
+                {aiLoading ? "Analyzing..." : "Generate AI Analysis"}
+              </Button>
+            )}
+          </div>
+          {aiSummary ? (
+            <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
+              {aiSummary.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+                }
+                return <React.Fragment key={i}>{part}</React.Fragment>;
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-[var(--text-muted)] py-4 text-center">
+              Generate an AI summary for an analyst-friendly overview of this report's findings.
+            </p>
+          )}
+        </Card>
+
         <Card className="p-6">
           <h3 className="text-sm font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-4 flex items-center gap-2">
             <Shield size={16} /> Authentication
