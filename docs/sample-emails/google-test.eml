@@ -1,0 +1,23 @@
+Return-Path: <3x-sdf-bounces@scoutcamp.bounces.google.com>
+Received: from mail-ua1-f54.google.com (mail-ua1-f54.google.com. [209.85.222.54])
+        by mx.google.com with ESMTPS id xyz123
+        for <user@example.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 24 Aug 2026 00:00:00 -0700 (PDT)
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@google.com header.s=20221208 header.b=xyz;
+       spf=pass (google.com: domain of 3x-sdf-bounces@scoutcamp.bounces.google.com designates 209.85.222.54 as permitted sender) smtp.mailfrom=3x-sdf-bounces@scoutcamp.bounces.google.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=google.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20221208; t=1690000000;
+        h=to:subject:message-id:date:from:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=abc;
+        b=def
+From: Google Notifications <notifications@google.com>
+To: user@example.com
+Subject: Security alert
+Date: Mon, 24 Aug 2026 00:00:00 -0700 (PDT)
+Message-ID: <12345@mail.gmail.com>
+
+Your Google Account was just signed in to from a new device.

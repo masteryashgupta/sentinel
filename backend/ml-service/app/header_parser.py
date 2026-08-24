@@ -205,12 +205,21 @@ def detect_header_anomalies(parsed: dict, auth: dict, origin_ip: str | None = No
     reply_domain = reply_to.split("@")[-1] if "@" in reply_to else ""
 
     if return_domain and from_domain and return_domain != from_domain:
-        anomalies.append({
-            "type": "return_path_mismatch",
-            "severity": "high",
-            "detail": f"Return-Path domain ({return_domain}) does not match From domain ({from_domain}). "
-                      f"Common spoofing signal.",
-        })
+        if return_domain.endswith("." + from_domain):
+            anomalies.append({
+                "type": "return_path_mismatch",
+                "severity": "low",
+                "detail": f"Return-Path domain ({return_domain}) is a subdomain of From domain ({from_domain}). "
+                          f"VERP bounce subdomain — expected for bulk senders.",
+            })
+        else:
+            anomalies.append({
+                "type": "return_path_mismatch",
+                "severity": "high",
+                "detail": f"Return-Path domain ({return_domain}) does not match From domain ({from_domain}). "
+                          f"Common spoofing signal.",
+            })
+
 
     if reply_domain and from_domain and reply_domain != from_domain:
         anomalies.append({
@@ -351,7 +360,8 @@ def check_relay_chain_order(received_chain: list) -> dict | None:
 
 def check_authorized_infrastructure(domain: str, origin_ip: str | None, ip_intel: dict | None) -> dict | None:
     """
-    Check domain's SPF record via DNS and validate if originating IP/ASN is authorized.
+    Check domain's SPF record via DNS and validate if originating IP/ASN is authorized,
+    recursively resolving include: mechanisms to avoid false positives.
     """
     if not domain:
         return None
@@ -365,7 +375,7 @@ def check_authorized_infrastructure(domain: str, origin_ip: str | None, ip_intel
                 "severity": "low",
                 "detail": f"Sender domain '{domain}' has no published SPF TXT record.",
             }
-        spf_text = spf_records[0].lower()
+        top_spf_text = spf_records[0].lower()
     except Exception:
         return {
             "type": "no_spf_policy",
@@ -376,23 +386,68 @@ def check_authorized_infrastructure(domain: str, origin_ip: str | None, ip_intel
     if not origin_ip:
         return None
 
-    # Check if origin_ip or ip_intel org matches any SPF mechanisms
-    is_authorized = False
-    if f"ip4:{origin_ip}" in spf_text or f"ip6:{origin_ip}" in spf_text:
-        is_authorized = True
-    elif origin_ip in spf_text:
-        is_authorized = True
-    else:
-        # Heuristic check for common includes matching IP org/ISP
+    def check_spf_recursive(current_domain: str, target_ip: str, depth: int = 0) -> bool | None:
+        if depth > 5:
+            return None
+        try:
+            ans = dns.resolver.resolve(current_domain, "TXT", lifetime=4.0)
+            recs = [str(r).strip('"') for r in ans if "v=spf1" in str(r)]
+            if not recs:
+                return False
+            text = recs[0].lower()
+            
+            import ipaddress
+            
+            # Extract all ip4 and ip6 mechanisms
+            ip4_nets = re.findall(r"ip4:([^\s]+)", text)
+            ip6_nets = re.findall(r"ip6:([^\s]+)", text)
+            
+            try:
+                target_addr = ipaddress.ip_address(target_ip)
+                for net in ip4_nets + ip6_nets:
+                    try:
+                        # Some mechanisms might just be an IP without a subnet mask, ip_network handles both if strict=False
+                        if target_addr in ipaddress.ip_network(net, strict=False):
+                            return True
+                    except ValueError:
+                        pass
+            except ValueError:
+                pass
+                
+            if f"ip4:{target_ip}" in text or f"ip6:{target_ip}" in text or target_ip in text:
+                return True
+                
+            includes = re.findall(r"include:([^\s]+)", text)
+
+            for inc in includes:
+                res = check_spf_recursive(inc, target_ip, depth + 1)
+                if res is True:
+                    return True
+                if res is None:
+                    return None
+            return False
+        except Exception:
+            return None
+
+    is_authorized = check_spf_recursive(domain, origin_ip)
+
+    # Heuristic check for common includes matching IP org/ISP as a fallback
+    if is_authorized is False:
         org_name = ((ip_intel or {}).get("isp") or "").lower()
-        includes = re.findall(r"include:([^\s]+)", spf_text)
+        includes = re.findall(r"include:([^\s]+)", top_spf_text)
         for inc in includes:
             inc_base = inc.split(".")[0]
             if inc_base and len(inc_base) > 3 and inc_base in org_name:
                 is_authorized = True
                 break
 
-    if not is_authorized:
+    if is_authorized is None:
+        return {
+            "type": "unauthorized_sending_infrastructure",
+            "severity": "low",
+            "detail": f"Could not fully resolve SPF include chain for '{domain}' (timeout or max depth reached). Cannot confirm if IP {origin_ip} is authorized.",
+        }
+    elif not is_authorized:
         return {
             "type": "unauthorized_sending_infrastructure",
             "severity": "high",
@@ -400,6 +455,7 @@ def check_authorized_infrastructure(domain: str, origin_ip: str | None, ip_intel
         }
 
     return None
+
 
 
 def extract_earliest_untrusted_ip(received_chain: list) -> str | None:
