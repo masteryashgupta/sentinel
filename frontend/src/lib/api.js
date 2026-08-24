@@ -31,7 +31,14 @@ export async function getCaseAuditLog(id) {
 
 export async function getCaseAISummary(id) {
   const res = await fetch(`${API_URL}/api/cases/${id}/ai-summary`);
-  if (!res.ok) throw new Error("Failed to generate AI summary");
+  if (!res.ok) {
+    let msg = "Failed to generate AI summary";
+    try {
+      const errData = await res.json();
+      msg = errData.detail || errData.error || msg;
+    } catch (e) {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 

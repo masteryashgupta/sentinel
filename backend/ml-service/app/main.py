@@ -1,6 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
@@ -157,12 +157,14 @@ async def analyze_email(file: UploadFile = File(...)):
 
 
 @app.post("/summarize-report")
-async def summarize_report(report_data: dict):
+async def summarize_report(request: Request):
     """
     Summarize the case report using the configured LLM.
     """
+    report_data = await request.json()
     if not GROQ_API_KEY and not GEMINI_API_KEY:
         raise HTTPException(status_code=503, detail="No LLM API key configured")
+
     
     result = detection.llm_summarize_report(report_data)
     if "error" in result:
