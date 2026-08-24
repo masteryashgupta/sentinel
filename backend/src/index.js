@@ -57,7 +57,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = parseInt(process.env.PORT || "4000", 10);
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Sentinel backend running on port ${PORT}`);
 });
 
