@@ -3,10 +3,11 @@
 @tailwind utilities;
 
 @layer base {
-  :root[data-theme='light'] {
+  :root {
     --bg-primary: #f7f8f6;
     --bg-panel: #ffffff;
     --bg-elevated: #ffffff;
+    --bg-subtle: #eef1ed;
     --border: #e2e5e0;
     --border-hover: #c9cec5;
     --text-primary: #14201a;
@@ -14,33 +15,14 @@
     --text-muted: #8a938c;
     --accent: #0f9d58;
     --accent-dim: #0a7a43;
-    --accent-soft: rgba(15,157,88,0.08);
+    --accent-soft: rgba(15, 157, 88, 0.08);
     --warning: #b25e00;
-    --warning-soft: rgba(178,94,0,0.08);
+    --warning-soft: rgba(178, 94, 0, 0.08);
     --danger: #c62828;
-    --danger-soft: rgba(198,40,40,0.08);
+    --danger-soft: rgba(198, 40, 40, 0.08);
     --info: #0369a1;
-    --shadow: rgba(0,0,0,0.08);
-  }
-
-  :root[data-theme='dark'] {
-    --bg-primary: #0a0e0c;
-    --bg-panel: #0f1512;
-    --bg-elevated: #141b17;
-    --border: #1e2a24;
-    --border-hover: #2a3830;
-    --text-primary: #e5e7eb;
-    --text-secondary: #9ca39e;
-    --text-muted: #5c6b64;
-    --accent: #39ff8f;
-    --accent-dim: #1f8a52;
-    --accent-soft: rgba(57,255,143,0.1);
-    --warning: #ffb454;
-    --warning-soft: rgba(255,180,84,0.1);
-    --danger: #ff5c5c;
-    --danger-soft: rgba(255,92,92,0.1);
-    --info: #5cc8ff;
-    --shadow: rgba(0,0,0,0.4);
+    --shadow: rgba(20, 32, 26, 0.06);
+    --shadow-hover: rgba(20, 32, 26, 0.10);
   }
 }
 
@@ -51,14 +33,6 @@
 html, body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-[data-theme='dark'] body {
-  background:
-    radial-gradient(ellipse at top, rgba(57, 255, 143, 0.04), transparent 60%),
-    var(--bg-primary);
-  background-attachment: fixed;
 }
 
 ::selection {

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Sun, Moon, Menu, X } from "lucide-react";
+import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X } from "lucide-react";
 import { listAlerts } from "../lib/api";
-import { useTheme } from "../context/ThemeContext";
 
 const navGroups = [
   {
@@ -27,7 +26,6 @@ export default function Layout({ children }) {
   const [unackCount, setUnackCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     fetchAlertsCount();
@@ -192,24 +190,6 @@ export default function Layout({ children }) {
               <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
               <span className="text-xs font-medium text-[var(--text-muted)]">3 services online</span>
             </div>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-muted)] hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-opacity-50"
-              aria-label="Toggle theme"
-            >
-              <div className="relative w-5 h-5 overflow-hidden">
-                <Sun 
-                  size={20} 
-                  className={`absolute inset-0 transition-transform duration-500 ${theme === 'dark' ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`} 
-                />
-                <Moon 
-                  size={20} 
-                  className={`absolute inset-0 transition-transform duration-500 ${theme === 'dark' ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`} 
-                />
-              </div>
-            </button>
           </div>
         </header>
 
