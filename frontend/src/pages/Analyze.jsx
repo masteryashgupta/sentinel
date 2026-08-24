@@ -98,9 +98,14 @@ function ResultView({ result }) {
     else if (score >= 40) variant = "warning";
     
     return (
-      <div className="flex items-center gap-2">
-        {category && <Badge variant="neutral">{category.replace(/_/g, ' ').toUpperCase()}</Badge>}
-        <Badge variant={variant} className="text-sm px-3 py-1">Score: {score}</Badge>
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-2">
+          {category && <Badge variant="neutral">{category.replace(/_/g, ' ').toUpperCase()}</Badge>}
+          <Badge variant={variant} className="text-sm px-3 py-1 font-bold">Score: {score} / 100</Badge>
+        </div>
+        <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">
+          0 = Safe, 100 = Highly Malicious
+        </span>
       </div>
     );
   };

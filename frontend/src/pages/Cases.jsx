@@ -59,8 +59,12 @@ export default function Cases() {
     
     return (
       <div className="flex flex-col items-end gap-1">
-        {category && <Badge variant="neutral" className="text-[10px]">{category.replace(/_/g, ' ').toUpperCase()}</Badge>}
-        <Badge variant={variant} className="whitespace-nowrap">Score: {score}</Badge>
+        {category && (
+          <span className="text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] mb-1 block text-right">
+            {category.replace(/_/g, ' ')}
+          </span>
+        )}
+        <Badge variant={variant} className="whitespace-nowrap">Score: {score}/100</Badge>
       </div>
     );
   };
