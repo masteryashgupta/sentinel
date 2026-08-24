@@ -7,7 +7,7 @@ import { correlateCase } from "../lib/campaigns.js";
 
 import { classifyAttribution, checkBlacklist } from "../lib/attribution.js";
 import { maskSensitiveData } from "../lib/masking.js";
-import { mlHttpAgent } from "../index.js";
+import { mlHttpAgent, mlHttpsAgent } from "../index.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -28,11 +28,12 @@ router.post("/analyze", upload.single("email"), async (req, res) => {
     const form = new FormData();
     form.append("file", req.file.buffer, { filename: req.file.originalname });
 
+    const isHttps = ML_SERVICE_URL.startsWith("https");
     const mlResponse = await fetch(`${ML_SERVICE_URL}/analyze`, {
       method: "POST",
       body: form,
       headers: form.getHeaders(),
-      agent: mlHttpAgent,   // reuse keep-alive TCP connections; prevents ECONNRESET under load
+      agent: isHttps ? mlHttpsAgent : mlHttpAgent,   // reuse keep-alive TCP connections
     });
 
     if (!mlResponse.ok) {

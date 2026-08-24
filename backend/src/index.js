@@ -3,6 +3,7 @@ import "express-async-errors";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
+import https from "https";
 
 import casesRouter from "./routes/cases.js";
 import campaignsRouter from "./routes/campaigns.js";
@@ -20,15 +21,15 @@ process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
 });
 
-// Shared keep-alive HTTP agent for all outbound calls (node-fetch to ML service).
-// Prevents "socket hang up" / ECONNRESET when multiple /analyze requests hit the
-// ML service concurrently — reuses TCP connections instead of opening a new one per request.
-export const mlHttpAgent = new http.Agent({
+const agentOptions = {
   keepAlive: true,
-  maxSockets: 20,        // allow up to 20 concurrent connections to ML service
-  maxFreeSockets: 5,     // keep 5 idle sockets warm
-  timeout: 120_000,      // 2 min socket inactivity timeout
-});
+  maxSockets: 20,
+  maxFreeSockets: 5,
+  timeout: 120_000,
+};
+
+export const mlHttpAgent = new http.Agent(agentOptions);
+export const mlHttpsAgent = new https.Agent(agentOptions);
 
 const app = express();
 app.use(cors({
