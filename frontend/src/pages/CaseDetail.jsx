@@ -51,7 +51,7 @@ export default function CaseDetail() {
       if (result.error) {
         throw new Error(result.error);
       }
-      setAiSummary(result.summary);
+      setAiSummary(result.summary || result.raw_response || "Received an empty response from AI.");
     } catch (e) {
       console.error(e);
       setAiSummary("Failed to generate AI summary: " + e.message);
