@@ -1,6 +1,6 @@
 # Sentinel: Email Forensic Intelligence Platform
 
-## 1. Project Overview
+ 1. Project Overview
 **Sentinel** is an advanced, automated Email Forensic Intelligence Platform built to solve Smart India Hackathon (SIH) Problem Statement **26106**. Its primary goal is to empower cyber-security analysts and investigators by completely automating the tedious process of analyzing raw email files (`.eml` and `.msg`) for spoofing, phishing, business email compromise (BEC), and malicious infrastructure.
 
 Instead of an investigator manually digging through network headers, running WHOIS lookups, and checking cryptographic signatures, Sentinel performs a deep forensic dissection in seconds, outputting an easily understandable **Fraud Score (0-100)** and automatically clustering related attacks into **Campaigns**.
