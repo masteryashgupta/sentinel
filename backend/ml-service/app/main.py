@@ -23,6 +23,10 @@ app.add_middleware(
 _IO_EXECUTOR = ThreadPoolExecutor(max_workers=10, thread_name_prefix="sentinel-io")
 
 
+@app.get("/")
+def root():
+    return {"status": "ok", "service": "sentinel-ml-service"}
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "sentinel-ml-service"}

@@ -37,6 +37,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Sentinel Backend API is running.");
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "sentinel-backend", timestamp: new Date().toISOString() });
 });
