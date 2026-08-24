@@ -38,8 +38,8 @@ export default function Dashboard() {
         const alerts = Array.isArray(alertsRes) ? alertsRes : [];
 
         // Compute Stats
-        const highRisk = cases.filter(c => c.classification === "phishing" || c.classification === "business_email_compromise").length;
-        const activeCampaigns = campaigns.filter(c => c.status === "active").length;
+        const highRisk = cases.filter(c => c.fraud_score >= 50).length;
+        const activeCampaigns = campaigns.length; // The endpoint returns active campaigns or we count all of them per instructions
         const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
         // Compute Risk Distribution
@@ -50,8 +50,8 @@ export default function Dashboard() {
           business_email_compromise: 0
         };
         cases.forEach(c => {
-          if (counts[c.classification] !== undefined) {
-            counts[c.classification]++;
+          if (c.category && counts[c.category] !== undefined) {
+            counts[c.category]++;
           }
         });
 
@@ -175,11 +175,11 @@ export default function Dashboard() {
                         {caseItem.subject || "No Subject"}
                       </h4>
                       <p className="text-sm text-[var(--text-secondary)] truncate">
-                        {caseItem.sender || "Unknown sender"}
+                        {caseItem.from_display_name || caseItem.from_address || "Unknown sender"}
                       </p>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
-                      {getScoreBadge(caseItem.risk_score)}
+                      {getScoreBadge(caseItem.fraud_score)}
                       <span className="text-xs text-[var(--text-muted)] w-24 text-right">
                         {formatDistanceToNow(new Date(caseItem.created_at))} ago
                       </span>
