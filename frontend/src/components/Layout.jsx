@@ -23,52 +23,65 @@ const navGroups = [
 ];
 
 function SystemStatus() {
-  const [status, setStatus] = useState(null);
-  const [isHovered, setIsHovered] = useState(false);
+  const [status, setStatus] = useState({ backend: "offline", ml_service: "offline", ai_engine: "offline" });
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const checkStatus = async () => {
       const data = await fetchSystemStatus();
-      if (data) setStatus(data);
+      if (data) {
+        setStatus(data);
+      } else {
+        setStatus({ backend: "offline", ml_service: "offline", ai_engine: "offline" });
+      }
     };
     checkStatus();
     const interval = setInterval(checkStatus, 30000); // Check every 30s
     return () => clearInterval(interval);
   }, []);
 
-  const onlineCount = status ? Object.values(status).filter((v) => v === "online").length : 0;
+  const onlineCount = Object.values(status).filter((v) => v === "online").length;
   const isFullyOnline = onlineCount === 3;
   const pulseColor = isFullyOnline ? "bg-[var(--accent)]" : (onlineCount > 0 ? "bg-[var(--warning)]" : "bg-[var(--danger)]");
   
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.system-status-container')) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   return (
     <div 
-      className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] relative cursor-default"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="system-status-container hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] relative cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
+      onClick={() => setIsOpen(!isOpen)}
     >
       <div className={`w-2 h-2 rounded-full ${pulseColor} animate-pulse`} />
-      <span className="text-xs font-medium text-[var(--text-muted)]">{onlineCount} services online</span>
+      <span className="text-xs font-medium text-[var(--text-muted)] select-none">{onlineCount} services online</span>
       
-      {isHovered && status && (
-        <div className="absolute top-full mt-2 right-0 w-48 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg shadow-xl p-3 z-50 animate-fade-in text-sm text-[var(--text-primary)]">
+      {isOpen && (
+        <div className="absolute top-full mt-2 right-0 w-56 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg shadow-xl p-3 z-50 animate-fade-in text-sm text-[var(--text-primary)] cursor-default" onClick={e => e.stopPropagation()}>
           <p className="text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] mb-2">System Status</p>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span>Backend API</span>
-              <span className={status.backend === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
-                {status.backend === "online" ? "●" : "○"}
+              <span className={`text-xs font-medium flex items-center gap-1.5 ${status.backend === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
+                {status.backend === "online" ? "● Online" : "○ Offline"}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span>ML Service</span>
-              <span className={status.ml_service === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
-                {status.ml_service === "online" ? "●" : "○"}
+              <span className={`text-xs font-medium flex items-center gap-1.5 ${status.ml_service === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
+                {status.ml_service === "online" ? "● Online" : "○ Offline"}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span>AI Engine</span>
-              <span className={status.ai_engine === "online" ? "text-[var(--accent)]" : "text-[var(--warning)]"}>
-                {status.ai_engine === "online" ? "●" : "○"}
+              <span className={`text-xs font-medium flex items-center gap-1.5 ${status.ai_engine === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
+                {status.ai_engine === "online" ? "● Online" : "○ Offline"}
               </span>
             </div>
           </div>
