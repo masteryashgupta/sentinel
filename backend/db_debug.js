@@ -1,7 +1,9 @@
 import { Client } from 'pg';
+import dotenv from 'dotenv';
 
-const DB_URL = 'postgresql://postgres.acjmkftgqnawtutqmnzm:BaGpvtL3!sm8FZt@aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres';
+dotenv.config();
 
+const DB_URL = process.env.DATABASE_URL;
 async function run() {
   const db = new Client({ connectionString: DB_URL });
   await db.connect();
