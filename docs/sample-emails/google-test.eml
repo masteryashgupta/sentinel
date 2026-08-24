@@ -19,5 +19,10 @@ To: user@example.com
 Subject: Security alert
 Date: Mon, 24 Aug 2026 00:00:00 -0700 (PDT)
 Message-ID: <12345@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 
 Your Google Account was just signed in to from a new device.
+Review activity: https://c.gle/12345
+More details: https://c.gle/67890
+Help center: https://c.gle/help
+Another link: https://c.gle/another

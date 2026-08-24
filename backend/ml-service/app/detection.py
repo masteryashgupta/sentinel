@@ -34,33 +34,45 @@ CREDENTIAL_HARVEST_PATTERNS = [
 ]
 
 URL_PATTERN = re.compile(r"https?://[^\s<>\"']+")
-SHORTENER_DOMAINS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd"}
+SHORTENER_DOMAINS = {"bit.ly", "tinyurl.com", "t.co", "ow.ly", "is.gd"}
+CORPORATE_SHORTENERS = {"c.gle", "g.co", "goo.gl", "fb.me", "amzn.to", "msft.it", "youtu.be"}
 
 
 def detect_obfuscated_urls(urls: list[str]) -> list[dict]:
     """Flag URLs using link shorteners or raw IP addresses."""
     findings = []
     ip_url_pattern = re.compile(r"https?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+    
+    seen_domains = set()
+    seen_ips = set()
+    
     for url in urls:
         domain_match = re.search(r"https?://([^/]+)", url)
         if not domain_match:
             continue
         domain = domain_match.group(1).lower().split(":")[0]
 
+        if domain in CORPORATE_SHORTENERS:
+            continue
+
         if domain in SHORTENER_DOMAINS:
-            findings.append({
-                "type": "obfuscated_url",
-                "severity": "medium",
-                "detail": f"URL '{url}' uses known link-shortener domain ({domain}) to obscure destination.",
-                "url": url,
-            })
+            if domain not in seen_domains:
+                findings.append({
+                    "type": "obfuscated_url",
+                    "severity": "medium",
+                    "detail": f"URL '{url}' uses known link-shortener domain ({domain}) to obscure destination.",
+                    "url": url,
+                })
+                seen_domains.add(domain)
         elif ip_url_pattern.match(url):
-            findings.append({
-                "type": "obfuscated_url",
-                "severity": "high",
-                "detail": f"URL '{url}' uses direct IP address instead of domain name.",
-                "url": url,
-            })
+            if domain not in seen_ips:
+                findings.append({
+                    "type": "obfuscated_url",
+                    "severity": "high",
+                    "detail": f"URL '{url}' uses direct IP address instead of domain name.",
+                    "url": url,
+                })
+                seen_ips.add(domain)
     return findings
 
 
@@ -79,7 +91,17 @@ def rule_based_score(subject: str, body: str) -> dict:
     cred_hits = scan(CREDENTIAL_HARVEST_PATTERNS, "credential_harvesting", 25)
 
     urls = URL_PATTERN.findall(body or "")
-    suspicious_urls = [u for u in urls if _looks_like_lookalike(u)]
+    
+    suspicious_urls = []
+    seen_suspicious_domains = set()
+    for u in urls:
+        if _looks_like_lookalike(u):
+            domain_match = re.search(r"https?://([^/]+)", u)
+            domain = domain_match.group(1).lower().split(":")[0] if domain_match else u
+            if domain not in seen_suspicious_domains:
+                suspicious_urls.append(u)
+                seen_suspicious_domains.add(domain)
+
     if suspicious_urls:
         flags.append({"category": "suspicious_urls", "weight": 20, "urls": suspicious_urls[:5]})
 
