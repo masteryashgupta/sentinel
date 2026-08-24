@@ -229,7 +229,12 @@ export default function CaseDetail() {
           </div>
           {aiSummary ? (
             <div className="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">
-              {aiSummary}
+              {aiSummary.split(/(\*\*.*?\*\*)/g).map((part, i) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+                }
+                return <React.Fragment key={i}>{part}</React.Fragment>;
+              })}
             </div>
           ) : (
             <p className="text-sm text-[var(--text-muted)] py-4 text-center">
