@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network } from "lucide-react";
 import { getCase, updateCaseStatus, reportUrl, getCaseAuditLog } from "../lib/api";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
