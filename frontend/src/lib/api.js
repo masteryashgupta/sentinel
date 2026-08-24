@@ -71,6 +71,22 @@ export async function addBlacklist(type, value, source) {
   return res.json();
 }
 
+export async function fetchHealth() {
+  const res = await fetch(`${API_URL}/health`);
+  if (!res.ok) throw new Error("Health check failed");
+  return res.json();
+}
+
+export async function fetchSystemStatus() {
+  try {
+    const res = await fetch(`${API_URL}/system-status`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null; // backend is completely down
+  }
+}
+
 export async function listAlerts() {
   const res = await fetch(`${API_URL}/api/alerts`);
   if (!res.ok) throw new Error("Failed to load alerts");

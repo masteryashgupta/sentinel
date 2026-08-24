@@ -45,6 +45,42 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", service: "sentinel-backend", timestamp: new Date().toISOString() });
 });
 
+app.get("/api/system-status", async (req, res) => {
+  const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/^"|"$/g, "");
+  
+  let mlStatus = "offline";
+  let aiStatus = "offline";
+  
+  try {
+    const isHttps = ML_SERVICE_URL.startsWith("https");
+    const agent = isHttps ? mlHttpsAgent : mlHttpAgent;
+    
+    // Using fetch with an abort controller to prevent hanging if ML service is asleep
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 sec timeout
+    
+    const mlRes = await fetch(`${ML_SERVICE_URL}/health`, { 
+      agent: agent,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (mlRes.ok) {
+      mlStatus = "online";
+      const mlData = await mlRes.json();
+      aiStatus = mlData.ai_engine || "offline";
+    }
+  } catch (err) {
+    console.error("ML Service health check failed:", err.message);
+  }
+  
+  res.json({
+    backend: "online",
+    ml_service: mlStatus,
+    ai_engine: aiStatus
+  });
+});
+
 app.use("/api/cases", casesRouter);
 app.use("/api/campaigns", campaignsRouter);
 app.use("/api/reports", reportsRouter);

@@ -23,13 +23,20 @@ app.add_middleware(
 _IO_EXECUTOR = ThreadPoolExecutor(max_workers=10, thread_name_prefix="sentinel-io")
 
 
+from app.detection import GROQ_API_KEY, GEMINI_API_KEY
+
 @app.get("/")
 def root():
     return {"status": "ok", "service": "sentinel-ml-service"}
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "sentinel-ml-service"}
+    ai_status = "online" if (GROQ_API_KEY or GEMINI_API_KEY) else "offline"
+    return {
+        "status": "ok", 
+        "service": "sentinel-ml-service",
+        "ai_engine": ai_status
+    }
 
 
 @app.post("/analyze")

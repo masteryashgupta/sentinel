@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X } from "lucide-react";
-import { listAlerts } from "../lib/api";
+import { listAlerts, fetchSystemStatus } from "../lib/api";
 
 const navGroups = [
   {
@@ -21,6 +21,62 @@ const navGroups = [
     ]
   }
 ];
+
+function SystemStatus() {
+  const [status, setStatus] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      const data = await fetchSystemStatus();
+      if (data) setStatus(data);
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const onlineCount = status ? Object.values(status).filter((v) => v === "online").length : 0;
+  const isFullyOnline = onlineCount === 3;
+  const pulseColor = isFullyOnline ? "bg-[var(--accent)]" : (onlineCount > 0 ? "bg-[var(--warning)]" : "bg-[var(--danger)]");
+  
+  return (
+    <div 
+      className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-primary)] relative cursor-default"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`w-2 h-2 rounded-full ${pulseColor} animate-pulse`} />
+      <span className="text-xs font-medium text-[var(--text-muted)]">{onlineCount} services online</span>
+      
+      {isHovered && status && (
+        <div className="absolute top-full mt-2 right-0 w-48 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-lg shadow-xl p-3 z-50 animate-fade-in text-sm text-[var(--text-primary)]">
+          <p className="text-[10px] font-bold tracking-wider uppercase text-[var(--text-muted)] mb-2">System Status</p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span>Backend API</span>
+              <span className={status.backend === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
+                {status.backend === "online" ? "●" : "○"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>ML Service</span>
+              <span className={status.ml_service === "online" ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
+                {status.ml_service === "online" ? "●" : "○"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>AI Engine</span>
+              <span className={status.ai_engine === "online" ? "text-[var(--accent)]" : "text-[var(--warning)]"}>
+                {status.ai_engine === "online" ? "●" : "○"}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Layout({ children }) {
   const [unackCount, setUnackCount] = useState(0);
@@ -184,12 +240,7 @@ export default function Layout({ children }) {
 
           {/* Right Controls */}
           <div className="flex items-center gap-4 md:gap-6">
-            
-            {/* Status Indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-primary)]">
-              <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">3 services online</span>
-            </div>
+            <SystemStatus />
           </div>
         </header>
 
