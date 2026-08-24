@@ -1,0 +1,22 @@
+Return-Path: <no-reply@paypa1-secure.com>
+Received: from mail.paypa1-secure.com (203.0.113.45) by mx.example.org; Mon, 12 Aug 2026 10:14:22 +0000
+Received: from unknown (HELO localhost) (198.51.100.20) by internal-relay; Mon, 12 Aug 2026 10:13:58 +0000
+From: "PayPal Security" <no-reply@paypa1-secure.com>
+Reply-To: support@paypa1-secure.com
+To: victim@example.org
+Subject: URGENT: Your account will be suspended within 24 hours
+Message-ID: <8f2a1c@paypa1-secure.com>
+Authentication-Results: mx.example.org; spf=fail; dkim=fail; dmarc=fail
+Content-Type: text/plain; charset="UTF-8"
+
+Dear Customer,
+
+We have detected unusual activity on your account. Failure to comply within
+24 hours will result in immediate account suspension.
+
+Click here to verify your account: http://paypa1-secure.com/verify?id=8821
+
+If you do not confirm your identity, your account will be permanently closed.
+
+Regards,
+PayPal Security Team

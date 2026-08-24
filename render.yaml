@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: sentinel-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ML_SERVICE_URL
+        sync: false
+
+  - type: web
+    name: sentinel-ml-service
+    runtime: python
+    rootDir: backend/ml-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

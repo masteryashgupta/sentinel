@@ -1,0 +1,9 @@
+Return-Path: <security@paypal.com>
+Received: from internal-relay.paypal.com (10.0.0.5) by mail.paypal.com; Mon, 12 Aug 2026 10:15:00 +0000
+Received: from mail.paypal.com (203.0.113.10) by mx.victim.org; Mon, 12 Aug 2026 10:00:00 +0000
+From: "PayPal Security" <security@paypal.com>
+To: victim@example.org
+Subject: Security Alert - Out of order timestamps test
+Message-ID: <test-relay-manipulation@paypal.com>
+
+Please review your recent account activities.

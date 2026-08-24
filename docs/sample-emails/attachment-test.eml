@@ -1,0 +1,19 @@
+From: ceo@acme-corp.com
+To: finance@acme-corp.com
+Subject: URGENT: Wire Transfer Required - Invoice Attached
+Date: Mon, 24 Aug 2026 07:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+Please process the attached invoice immediately. Wire the funds to the account specified.
+
+--boundary123
+Content-Type: application/octet-stream; name="invoice.pdf.exe"
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+Content-Transfer-Encoding: base64
+
+TVqQAAMAAAAEAAAA//8AALgAAAAAAAAA
+--boundary123--
