@@ -10,52 +10,59 @@ import { formatDistanceToNow } from "../lib/utils";
 
 export default function Cases() {
   const [cases, setCases] = useState([]);
-  const [campaignsCount, setCampaignsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [stats, setStats] = useState({ total: 0, highRisk: 0, campaigns: 0 });
+  
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [casesData, campaignsData] = await Promise.all([
-          listCases(),
-          listCampaigns().catch(() => [])
-        ]);
-        setCases(casesData || []);
-        setCampaignsCount((campaignsData || []).length);
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
+  const loadCases = async () => {
+    setLoading(true);
+    setError(null);
+    setCases([]);
+    setStats({ total: 0, highRisk: 0, campaigns: 0 });
+
+    try {
+      const data = await listCases();
+      setCases(data);
+      setStats({
+        total: data.length,
+        highRisk: data.filter(c => c.fraud_score >= 50).length,
+        campaigns: new Set(data.map(c => c.campaign_id).filter(Boolean)).size
+      });
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load cases");
+    } finally {
+      setLoading(false);
     }
-    loadData();
+  };
+
+  useEffect(() => {
+    loadCases();
   }, []);
 
-  const filteredCases = cases.filter((c) => {
-    const query = search.toLowerCase();
-    const matchesSearch =
-      !query ||
-      (c.subject || "").toLowerCase().includes(query) ||
-      (c.from_address || "").toLowerCase().includes(query) ||
-      (c.sender_domain || "").toLowerCase().includes(query);
-
-    const matchesCategory =
-      categoryFilter === "all" || c.category === categoryFilter;
-    const matchesStatus =
-      statusFilter === "all" || c.status === statusFilter;
-
-    return matchesSearch && matchesCategory && matchesStatus;
+  const filteredCases = cases.filter(c => {
+    if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
+    if (statusFilter !== "all" && (c.status || "open") !== statusFilter) return false;
+    if (search && !c.subject?.toLowerCase().includes(search.toLowerCase()) && 
+        !c.from_address?.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
   });
 
-  const getScoreBadge = (score) => {
-    if (score >= 80) return <Badge variant="danger">High Risk ({score})</Badge>;
-    if (score >= 40) return <Badge variant="warning">Suspicious ({score})</Badge>;
-    return <Badge variant="success">Legitimate ({score})</Badge>;
+  const getScoreBadge = (score, category) => {
+    let variant = "success";
+    if (score >= 80) variant = "danger";
+    else if (score >= 40) variant = "warning";
+    
+    return (
+      <div className="flex flex-col items-end gap-1">
+        {category && <Badge variant="neutral" className="text-[10px]">{category.replace(/_/g, ' ').toUpperCase()}</Badge>}
+        <Badge variant={variant} className="whitespace-nowrap">Score: {score}</Badge>
+      </div>
+    );
   };
 
   const getStatusBadge = (status) => {
@@ -68,7 +75,6 @@ export default function Cases() {
     }
   };
 
-  const highRiskCount = cases.filter(c => c.fraud_score >= 50).length;
 
   if (loading) {
     return (
