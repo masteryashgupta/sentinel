@@ -79,7 +79,7 @@ export async function fetchHealth() {
 
 export async function fetchSystemStatus() {
   try {
-    const res = await fetch(`${API_URL}/system-status`);
+    const res = await fetch(`${API_URL}/api/system-status`);
     if (!res.ok) return null;
     return await res.json();
   } catch (e) {
