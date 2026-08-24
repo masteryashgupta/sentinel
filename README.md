@@ -15,8 +15,8 @@ geolocates probable origin, and generates forensic reports for investigators.
 
 ```
 frontend/          React + Vite + Tailwind  → deploy to GitHub Pages
-backend/            Node/Express (orchestration, auth, cases)  → deploy to Railway
-backend/ml-service/  Python FastAPI (parsing, NLP, geolocation) → deploy to Railway (2nd service)
+backend/            Node/Express (orchestration, auth, cases)  → deploy to Render
+backend/ml-service/  Python FastAPI (parsing, NLP, geolocation) → deploy to Render (2nd service)
 supabase/            SQL schema for Postgres
 ```
 
@@ -26,7 +26,7 @@ Data flow:
 Browser → GitHub Pages (frontend)
                │  REST
                ▼
-         Railway: Node backend  ──REST──▶  Railway: Python ml-service
+         Render: Node backend  ──REST──▶  Render: Python ml-service
                │                                │
                ▼                                ▼
           Supabase Postgres            mailparser / SPF-DKIM-DMARC /
