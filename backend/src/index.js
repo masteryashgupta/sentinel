@@ -1,4 +1,5 @@
 import express from "express";
+import "express-async-errors";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
@@ -48,6 +49,11 @@ app.use("/api/retention", retentionRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
+});
+
+app.use((err, req, res, next) => {
+  console.error("Express Error:", err);
+  res.status(500).json({ error: "Internal Server Error", message: err.message });
 });
 
 const PORT = parseInt(process.env.PORT || "4000", 10);
