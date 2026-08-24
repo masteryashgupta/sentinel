@@ -39,7 +39,7 @@ jobs:
       - name: Build
         working-directory: ./frontend
         env:
-          VITE_API_URL: "https://sentinel-production-3abc.up.railway.app"
+          VITE_API_URL: "https://sentinel-production-ad23.up.railway.app"
         run: |
           npm run build
           # Support SPA routing on GitHub Pages by serving index.html for 404s
