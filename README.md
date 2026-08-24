@@ -7,9 +7,9 @@ geolocates probable origin, and generates forensic reports for investigators.
 
 ## Live Links
 
-- **Frontend (Web App)**: [https://masteryashgupta.github.io/sentinel/](https://masteryashgupta.github.io/sentinel/)
-- **Backend API**: `https://sentinel-production-3abc.up.railway.app`
-- **ML Service API**: `https://feisty-alignment-production-99a8.up.railway.app`
+- **Frontend**: `https://masteryashgupta.github.io/sentinel`
+- **Backend API**: `https://sentinel-production-ad23.up.railway.app`
+- **ML Service**: `https://feisty-alignment-production-1a8a.up.railway.app`
 
 ## Architecture
 
