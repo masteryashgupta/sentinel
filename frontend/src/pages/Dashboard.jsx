@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "../lib/utils";
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [data, setData] = useState({
     cases: [],
     campaigns: [],
@@ -24,62 +25,74 @@ export default function Dashboard() {
     riskDistribution: []
   });
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const [casesRes, campaignsRes, alertsRes] = await Promise.all([
-          listCases().catch(() => []),
-          listCampaigns().catch(() => []),
-          listAlerts().catch(() => [])
-        ]);
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    setData({
+      cases: [],
+      campaigns: [],
+      alerts: [],
+      stats: { totalCases: 0, highRisk: 0, activeCampaigns: 0, unackAlerts: 0 },
+      riskDistribution: []
+    });
 
-        const cases = Array.isArray(casesRes) ? casesRes : [];
-        const campaigns = Array.isArray(campaignsRes) ? campaignsRes : [];
-        const alerts = Array.isArray(alertsRes) ? alertsRes : [];
+    try {
+      const [casesRes, campaignsRes, alertsRes] = await Promise.all([
+        listCases().catch(() => []),
+        listCampaigns().catch(() => []),
+        listAlerts().catch(() => [])
+      ]);
 
-        // Compute Stats
-        const highRisk = cases.filter(c => c.fraud_score >= 50).length;
-        const activeCampaigns = campaigns.length; // The endpoint returns active campaigns or we count all of them per instructions
-        const unackAlerts = alerts.filter(a => !a.acknowledged).length;
+      const cases = Array.isArray(casesRes) ? casesRes : [];
+      const campaigns = Array.isArray(campaignsRes) ? campaignsRes : [];
+      const alerts = Array.isArray(alertsRes) ? alertsRes : [];
 
-        // Compute Risk Distribution
-        const counts = {
-          legitimate: 0,
-          suspicious: 0,
-          phishing: 0,
-          business_email_compromise: 0
-        };
-        cases.forEach(c => {
-          if (c.category && counts[c.category] !== undefined) {
-            counts[c.category]++;
-          }
-        });
+      // Compute Stats
+      const highRisk = cases.filter(c => c.fraud_score >= 50).length;
+      const activeCampaigns = campaigns.length; // The endpoint returns active campaigns or we count all of them per instructions
+      const unackAlerts = alerts.filter(a => !a.acknowledged).length;
 
-        const riskDistribution = [
-          { label: "Legitimate", value: counts.legitimate, color: "var(--accent)" },
-          { label: "Suspicious", value: counts.suspicious, color: "var(--warning)" },
-          { label: "Phishing", value: counts.phishing, color: "var(--danger)" },
-          { label: "BEC", value: counts.business_email_compromise, color: "var(--info)" },
-        ];
+      // Compute Risk Distribution
+      const counts = {
+        legitimate: 0,
+        suspicious: 0,
+        phishing: 0,
+        business_email_compromise: 0
+      };
+      cases.forEach(c => {
+        if (c.category && counts[c.category] !== undefined) {
+          counts[c.category]++;
+        }
+      });
 
-        setData({
-          cases: cases.slice(0, 5), // last 5
-          campaigns,
-          alerts,
-          stats: {
-            totalCases: cases.length,
-            highRisk,
-            activeCampaigns,
-            unackAlerts
-          },
-          riskDistribution
-        });
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-      } finally {
-        setLoading(false);
-      }
+      const riskDistribution = [
+        { label: "Legitimate", value: counts.legitimate, color: "var(--accent)" },
+        { label: "Suspicious", value: counts.suspicious, color: "var(--warning)" },
+        { label: "Phishing", value: counts.phishing, color: "var(--danger)" },
+        { label: "BEC", value: counts.business_email_compromise, color: "var(--info)" },
+      ];
+
+      setData({
+        cases: cases.slice(0, 5), // last 5
+        campaigns,
+        alerts,
+        stats: {
+          totalCases: cases.length,
+          highRisk,
+          activeCampaigns,
+          unackAlerts
+        },
+        riskDistribution
+      });
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+      setError("Failed to load dashboard data.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadDashboard();
   }, []);
 
@@ -106,6 +119,19 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
+        <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading dashboard</h3>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <button onClick={loadDashboard} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+          Retry
+        </button>
+      </Card>
     );
   }
 
