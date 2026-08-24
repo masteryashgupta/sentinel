@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, ShieldAlert, Network, Zap, ArrowRight, UploadCloud } from "lucide-react";
+import { Activity, ShieldAlert, Network, Zap, ArrowRight, UploadCloud, Search } from "lucide-react";
 import { listCases, listCampaigns, listAlerts } from "../lib/api";
 import StatCard from "../components/ui/StatCard";
 import Card from "../components/ui/Card";
