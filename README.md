@@ -8,8 +8,8 @@ geolocates probable origin, and generates forensic reports for investigators.
 ## Live Links
 
 - **Frontend**: `https://masteryashgupta.github.io/sentinel`
-- **Backend API**: `https://sentinel-production-ad23.up.railway.app`
-- **ML Service**: `https://feisty-alignment-production-1a8a.up.railway.app`
+- **Backend API**: `https://sentinel-backend-c48y.onrender.com`
+- **ML Service**: `https://sentinel-ml-service.onrender.com`
 
 ## Architecture
 
