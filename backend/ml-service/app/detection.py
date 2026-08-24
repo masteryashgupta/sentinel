@@ -199,12 +199,16 @@ def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
 
 
 def _safe_json_parse(text: str) -> dict:
-    text = text.strip()
+    # Strip <think>...</think> blocks (often added by reasoning models)
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    
     text = re.sub(r"^```json\s*|\s*```$", "", text.strip())
     try:
         return json.loads(text)
     except Exception:
-        return {"raw_response": text}
+        # If it's still not valid JSON, strip markdown bold asterisks to make it cleaner plain text
+        clean_text = text.replace("**", "")
+        return {"raw_response": clean_text}
 
 
 def llm_summarize_report(report_data: dict) -> dict | None:
