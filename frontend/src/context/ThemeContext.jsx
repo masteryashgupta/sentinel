@@ -6,12 +6,17 @@ export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // Check localStorage first, otherwise fallback to "dark"
+    // Check localStorage first
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("sentinel-theme");
       if (stored === "dark" || stored === "light") {
         return stored;
       }
+      // Fallback to OS preference
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "light";
     }
     return "dark";
   });
