@@ -13,29 +13,11 @@ import { useEffect, useState } from "react";
 
 export default function App() {
   const location = useLocation();
-  const [displayLocation, setDisplayLocation] = useState(location);
-  const [transitionStage, setTransitionStage] = useState("fadeIn");
-
-  useEffect(() => {
-    if (location !== displayLocation) {
-      setTransitionStage("fadeOut");
-    }
-  }, [location, displayLocation]);
 
   return (
     <Layout>
-      <div
-        className={`${
-          transitionStage === "fadeIn" ? "animate-page-in" : "opacity-0"
-        } transition-opacity duration-200 w-full`}
-        onTransitionEnd={() => {
-          if (transitionStage === "fadeOut") {
-            setDisplayLocation(location);
-            setTransitionStage("fadeIn");
-          }
-        }}
-      >
-        <Routes location={displayLocation} key={displayLocation.pathname}>
+      <div className="animate-page-in w-full" key={location.pathname}>
+        <Routes location={location}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/cases" element={<Cases />} />
