@@ -95,9 +95,9 @@ async def analyze_email(file: UploadFile = File(...)):
         return_exceptions=True,
     )
 
-    ip_intel      = gathered[0] if not isinstance(gathered[0], Exception) else {}
-    domain_intel  = gathered[1] if not isinstance(gathered[1], Exception) else {}
-    mx_anomaly    = gathered[2] if not isinstance(gathered[2], Exception) else None
+    ip_intel      = gathered[0] if not isinstance(gathered[0], BaseException) else {}
+    domain_intel  = gathered[1] if not isinstance(gathered[1], BaseException) else {}
+    mx_anomaly    = gathered[2] if not isinstance(gathered[2], BaseException) else None
 
     # ── Step 3: Header anomaly detection (CPU + already-cached SPF DNS) ────────
     # check_authorized_infrastructure does one DNS TXT lookup (4 s lifetime);
@@ -106,14 +106,14 @@ async def analyze_email(file: UploadFile = File(...)):
         header_parser.detect_header_anomalies, parsed, auth, origin_ip, ip_intel
     )
     anomalies = await anomalies_future
-    if mx_anomaly:
+    if isinstance(mx_anomaly, dict):
         if auth.get("spf") == "pass":
             mx_anomaly["severity"] = "low"
         anomalies.append(mx_anomaly)
 
     # ── Step 4: Rule-based + LLM scoring (pure CPU/regex — run inline) ─────────
-    rule_result = detection.rule_based_score(parsed.get("subject"), parsed.get("body_text"))
-    llm_result  = detection.llm_classify(parsed.get("subject"), parsed.get("body_text"), auth)
+    rule_result = detection.rule_based_score(parsed.get("subject") or "", parsed.get("body_text") or "")
+    llm_result  = detection.llm_classify(parsed.get("subject") or "", parsed.get("body_text") or "", auth)
 
     # ── Step 5: Aggregate into one explainable score ───────────────────────────
     scoring = detection.aggregate_score(rule_result, llm_result, anomalies, domain_intel, ip_intel, auth)
@@ -167,7 +167,7 @@ async def summarize_report(request: Request):
 
     
     result = detection.llm_summarize_report(report_data)
-    if "error" in result:
+    if result and "error" in result:
         raise HTTPException(status_code=502, detail=result["error"])
         
     return result
