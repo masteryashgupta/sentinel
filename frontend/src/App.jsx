@@ -35,7 +35,7 @@ export default function App() {
           }
         }}
       >
-        <Routes location={displayLocation}>
+        <Routes location={displayLocation} key={displayLocation.pathname}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/cases" element={<Cases />} />
