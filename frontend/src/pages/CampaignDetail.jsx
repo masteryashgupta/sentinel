@@ -12,8 +12,26 @@ export default function CampaignDetail() {
   const [camp, setCamp] = useState(null);
   const [error, setError] = useState(null);
 
+  const [loading, setLoading] = useState(true);
+
+  const loadCampaignDetail = async () => {
+    setLoading(true);
+    setError(null);
+    setCamp(null);
+    
+    try {
+      const data = await getCampaign(id);
+      setCamp(data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load campaign.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    getCampaign(id).then(setCamp).catch(e => setError(e.message));
+    loadCampaignDetail();
   }, [id]);
 
   const getScoreBadge = (score) => {
@@ -32,22 +50,7 @@ export default function CampaignDetail() {
     }
   };
 
-  if (error) {
-    return (
-      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
-        <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading campaign</h3>
-        <p className="text-[var(--text-secondary)]">{error}</p>
-        <Link to="/campaigns" className="mt-6 inline-block">
-          <button className="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-dim)] flex items-center gap-2">
-            <ArrowLeft size={16} /> Back to campaigns
-          </button>
-        </Link>
-      </Card>
-    );
-  }
-
-  if (!camp) {
+  if (loading || !camp) {
     return (
       <div className="p-8 max-w-5xl mx-auto space-y-6">
         <Skeleton className="h-6 w-32" />
@@ -59,6 +62,26 @@ export default function CampaignDetail() {
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
+        <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading campaign</h3>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <div className="flex justify-center gap-4">
+          <button onClick={loadCampaignDetail} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+            Retry
+          </button>
+          <Link to="/campaigns" className="inline-block">
+            <button className="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-dim)] flex items-center gap-2">
+              <ArrowLeft size={16} /> Back to campaigns
+            </button>
+          </Link>
+        </div>
+      </Card>
     );
   }
 

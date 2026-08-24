@@ -12,16 +12,25 @@ export default function Alerts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadAlerts = async () => {
+    setLoading(true);
+    setError(null);
+    setAlerts([]);
+    
+    try {
+      const data = await listAlerts();
+      setAlerts(data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load alerts.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadAlerts();
   }, []);
-
-  function loadAlerts() {
-    listAlerts()
-      .then(setAlerts)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }
 
   async function handleAck(id) {
     try {
@@ -59,7 +68,10 @@ export default function Alerts() {
       <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
         <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading alerts</h3>
-        <p className="text-[var(--text-secondary)]">{error}</p>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <button onClick={loadAlerts} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+          Retry
+        </button>
       </Card>
     );
   }

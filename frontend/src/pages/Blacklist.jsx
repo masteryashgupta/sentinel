@@ -15,16 +15,25 @@ export default function Blacklist() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const loadList = async () => {
+    setLoading(true);
+    setError(null);
+    setEntries([]);
+
+    try {
+      const data = await listBlacklist();
+      setEntries(data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load blacklist entries.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadList();
   }, []);
-
-  function loadList() {
-    listBlacklist()
-      .then(setEntries)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -55,6 +64,19 @@ export default function Blacklist() {
           <Skeleton className="h-64" />
         </Card>
       </div>
+    );
+  }
+
+  if (error && entries.length === 0) {
+    return (
+      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
+        <Shield className="mx-auto text-[var(--danger)] mb-4" size={32} />
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading blacklist</h3>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <button onClick={loadList} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+          Retry
+        </button>
+      </Card>
     );
   }
 

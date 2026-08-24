@@ -18,13 +18,32 @@ export default function CaseDetail() {
   const [auditLog, setAuditLog] = useState([]);
   const [role, setRole] = useState("investigator");
 
-  useEffect(() => {
-    getCase(id, role).then(setC).catch((e) => setError(e.message));
-  }, [id, role]);
+  const [loading, setLoading] = useState(true);
+
+  const loadCaseDetail = async () => {
+    setLoading(true);
+    setError(null);
+    setC(null);
+    setAuditLog([]);
+
+    try {
+      const [caseData, logData] = await Promise.all([
+        getCase(id, role),
+        getCaseAuditLog(id).catch(() => [])
+      ]);
+      setC(caseData);
+      setAuditLog(logData);
+    } catch (e) {
+      setError("Failed to load case details.");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getCaseAuditLog(id).then(setAuditLog).catch(() => {});
-  }, [id]);
+    loadCaseDetail();
+  }, [id, role]);
 
   async function handleStatusChange(status) {
     setUpdating(true);
@@ -45,20 +64,7 @@ export default function CaseDetail() {
     return <Badge variant="success">Legitimate ({score})</Badge>;
   };
 
-  if (error) {
-    return (
-      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
-        <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
-        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading case</h3>
-        <p className="text-[var(--text-secondary)]">{error}</p>
-        <Link to="/cases" className="mt-6 inline-block">
-          <Button variant="secondary" icon={ArrowLeft}>Back to cases</Button>
-        </Link>
-      </Card>
-    );
-  }
-
-  if (!c) {
+  if (loading || !c) {
     return (
       <div className="p-8 max-w-5xl mx-auto space-y-6">
         <div className="flex justify-between items-start">
@@ -74,6 +80,24 @@ export default function CaseDetail() {
           <Skeleton className="h-64" />
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
+        <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading case</h3>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <div className="flex justify-center gap-4">
+          <button onClick={loadCaseDetail} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+            Retry
+          </button>
+          <Link to="/cases" className="inline-block">
+            <Button variant="secondary" icon={ArrowLeft}>Back to cases</Button>
+          </Link>
+        </div>
+      </Card>
     );
   }
 

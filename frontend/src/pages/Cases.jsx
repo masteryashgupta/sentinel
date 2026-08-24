@@ -111,19 +111,19 @@ export default function Cases() {
         <StatCard 
           icon={Activity} 
           label="Total Cases Analyzed" 
-          value={cases.length} 
+          value={stats.total} 
         />
         <StatCard 
           icon={ShieldAlert} 
           label="High-Risk Cases" 
-          value={highRiskCount} 
-          trend={`${cases.length > 0 ? Math.round((highRiskCount / cases.length) * 100) : 0}% of total`}
+          value={stats.highRisk} 
+          trend={`${stats.total > 0 ? Math.round((stats.highRisk / stats.total) * 100) : 0}% of total`}
           trendUp={true}
         />
         <StatCard 
           icon={Network} 
           label="Active Campaigns" 
-          value={campaignsCount} 
+          value={stats.campaigns} 
         />
       </div>
 
@@ -199,7 +199,7 @@ export default function Cases() {
                 <div className="flex flex-col gap-3 shrink-0">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-[var(--text-muted)]">Risk Score</span>
-                    {getScoreBadge(c.fraud_score)}
+                    {getScoreBadge(c.fraud_score, c.category)}
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
                     <div className="flex items-center gap-2">

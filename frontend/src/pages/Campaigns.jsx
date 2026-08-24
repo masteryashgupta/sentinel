@@ -12,11 +12,24 @@ export default function Campaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadCampaigns = async () => {
+    setLoading(true);
+    setError(null);
+    setCampaigns([]);
+    
+    try {
+      const data = await listCampaigns();
+      setCampaigns(data);
+    } catch (e) {
+      console.error(e);
+      setError("Failed to load campaigns.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    listCampaigns()
-      .then(setCampaigns)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+    loadCampaigns();
   }, []);
 
   const activeCampaigns = campaigns.filter(c => c.status === "active" || !c.status).length;
@@ -41,7 +54,10 @@ export default function Campaigns() {
       <Card className="p-8 text-center max-w-5xl mx-auto mt-8">
         <ShieldAlert className="mx-auto text-[var(--danger)] mb-4" size={32} />
         <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Error loading campaigns</h3>
-        <p className="text-[var(--text-secondary)]">{error}</p>
+        <p className="text-[var(--text-secondary)] mb-6">{error}</p>
+        <button onClick={loadCampaigns} className="bg-[var(--accent)] text-white px-4 py-2 rounded font-medium hover:bg-[var(--accent-dim)]">
+          Retry
+        </button>
       </Card>
     );
   }
