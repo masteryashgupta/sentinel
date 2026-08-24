@@ -12,7 +12,7 @@ import { mlHttpAgent } from "../index.js";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://localhost:8000";
+const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/^"|"$/g, "");
 
 /**
  * POST /api/cases/analyze
