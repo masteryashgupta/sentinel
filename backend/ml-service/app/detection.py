@@ -231,10 +231,12 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                 },
                 timeout=15,
             )
+            if resp.status_code != 200:
+                return {"error": f"Groq API Error ({resp.status_code}): {resp.text}"}
             content = resp.json()["choices"][0]["message"]["content"]
             return _safe_json_parse(content)
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": f"Groq internal error: {str(e)}"}
 
     if GEMINI_API_KEY:
         try:
@@ -244,10 +246,12 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                 json={"contents": [{"parts": [{"text": prompt}]}]},
                 timeout=15,
             )
+            if resp.status_code != 200:
+                return {"error": f"Gemini API Error ({resp.status_code}): {resp.text}"}
             content = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
             return _safe_json_parse(content)
         except Exception as e:
-            return {"error": str(e)}
+            return {"error": f"Gemini internal error: {str(e)}"}
 
     return {"error": "No LLM API key configured"}
 
