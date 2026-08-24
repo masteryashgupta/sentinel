@@ -19,6 +19,15 @@ export default {
       boxShadow: {
         glow: "0 0 20px rgba(57, 255, 143, 0.15)",
       },
+      keyframes: {
+        "fade-slide-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "fade-slide-up": "fade-slide-up 0.4s ease-out forwards",
+      },
     },
   },
   plugins: [],

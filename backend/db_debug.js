@@ -6,7 +6,7 @@ async function run() {
   const db = new Client({ connectionString: DB_URL });
   await db.connect();
   
-  const res = await db.query('SELECT id, subject, fraud_score, analysis FROM cases ORDER BY created_at DESC LIMIT 1');
+  const res = await db.query('SELECT id, subject, fraud_score, classifier_notes, header_anomalies FROM cases ORDER BY created_at DESC LIMIT 1');
   if (res.rows.length === 0) {
     console.log("No cases found");
     return;
@@ -21,16 +21,14 @@ async function run() {
   console.log('DEBUG BREAKDOWN FROM DATABASE');
   console.log('=======================================');
   
-  const analysis = latestCase.analysis;
-  
-  console.log('\n--- SCORING ---');
-  console.log(JSON.stringify(analysis.scoring, null, 2));
-
   console.log('\n--- RULE_BASED DETECTION ---');
-  console.log(JSON.stringify(analysis.detection?.rule_based, null, 2));
+  console.log(JSON.stringify(latestCase.classifier_notes?.rule_based, null, 2));
 
   console.log('\n--- LLM DETECTION ---');
-  console.log(JSON.stringify(analysis.detection?.llm, null, 2));
+  console.log(JSON.stringify(latestCase.classifier_notes?.llm, null, 2));
+  
+  console.log('\n--- HEADER ANOMALIES ---');
+  console.log(JSON.stringify(latestCase.header_anomalies, null, 2));
   
   await db.end();
 }

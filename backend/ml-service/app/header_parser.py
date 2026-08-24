@@ -425,6 +425,12 @@ def check_authorized_infrastructure(domain: str, origin_ip: str | None, ip_intel
                     return True
                 if res is None:
                     return None
+                    
+            redirect_match = re.search(r"redirect=([^\s]+)", text)
+            if redirect_match:
+                redirect_target = redirect_match.group(1)
+                return check_spf_recursive(redirect_target, target_ip, depth + 1)
+                
             return False
         except Exception:
             return None

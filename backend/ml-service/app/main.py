@@ -96,6 +96,8 @@ async def analyze_email(file: UploadFile = File(...)):
     )
     anomalies = await anomalies_future
     if mx_anomaly:
+        if auth.get("spf") == "pass":
+            mx_anomaly["severity"] = "low"
         anomalies.append(mx_anomaly)
 
     # ── Step 4: Rule-based + LLM scoring (pure CPU/regex — run inline) ─────────

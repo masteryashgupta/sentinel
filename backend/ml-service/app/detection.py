@@ -122,10 +122,20 @@ def rule_based_score(subject: str, body: str) -> dict:
 def _looks_like_lookalike(url: str) -> bool:
     """Very cheap lookalike-domain heuristic: brand keyword + non-brand TLD/domain."""
     known_brands = ["paypal", "microsoft", "google", "amazon", "apple", "bankofamerica", "chase"]
+    allowed_suffixes = [
+        "googleapis.com", "googleusercontent.com", "gstatic.com", "googlevideo.com",
+        "microsoftonline.com", "live.com", "office.com"
+    ]
+    
     domain_match = re.search(r"https?://([^/]+)", url)
     if not domain_match:
         return False
-    domain = domain_match.group(1).lower()
+    domain = domain_match.group(1).lower().split(":")[0]
+    
+    for suffix in allowed_suffixes:
+        if domain == suffix or domain.endswith("." + suffix):
+            return False
+
     for brand in known_brands:
         if brand in domain and not domain.endswith(f"{brand}.com"):
             return True

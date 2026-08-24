@@ -2,18 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* LIGHT THEME (default fallback, but we'll default to dark via JS/attribute) */
+    --bg-primary: #f7f8f6;
+    --bg-panel: #ffffff;
+    --bg-elevated: #ffffff;
+    --border: #e2e5e0;
+    --text-primary: #14201a;
+    --text-muted: #6b7a72;
+    --accent: #0f9d58;
+    --accent-dim: #0a7a43;
+    --warning: #b25e00;
+    --danger: #c62828;
+  }
+
+  [data-theme='dark'] {
+    /* DARK THEME */
+    --bg-primary: #0a0e0c;
+    --bg-panel: #0f1512;
+    --bg-elevated: #141b17;
+    --border: #1e2a24;
+    --text-primary: #e5e7eb;
+    --text-muted: #6b7a72;
+    --accent: #39ff8f;
+    --accent-dim: #1f8a52;
+    --warning: #ffb454;
+    --danger: #ff5c5c;
+  }
+}
+
 * {
   font-family: "JetBrains Mono", monospace;
 }
 
 body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  /* The radial gradient and scanlines can remain in dark mode specifically */
+}
+
+[data-theme='dark'] body {
   background:
     radial-gradient(ellipse at top, rgba(57, 255, 143, 0.04), transparent 60%),
-    #0a0e0c;
+    var(--bg-primary);
 }
 
 ::selection {
   background: rgba(57, 255, 143, 0.25);
+}
+
+[data-theme='light'] ::selection {
+  background: rgba(15, 157, 88, 0.25);
 }
 
 .scanline {
@@ -26,7 +66,17 @@ body {
   );
 }
 
+[data-theme='light'] .scanline {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 2px,
+    rgba(15, 157, 88, 0.015) 2px,
+    rgba(15, 157, 88, 0.015) 4px
+  );
+}
+
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #0f1512; }
-::-webkit-scrollbar-thumb { background: #1e2a24; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #39ff8f44; }
+::-webkit-scrollbar-track { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
