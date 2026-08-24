@@ -174,8 +174,9 @@ def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
                     "model": "qwen/qwen3.6-27b",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.1,
+                    "max_tokens": 4096,
                 },
-                timeout=15,
+                timeout=45,
             )
             content = resp.json()["choices"][0]["message"]["content"]
             return _safe_json_parse(content)
@@ -199,8 +200,8 @@ def llm_classify(subject: str, body: str, auth: dict) -> dict | None:
 
 
 def _safe_json_parse(text: str) -> dict:
-    # Strip <think>...</think> blocks (often added by reasoning models)
-    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # Strip <think>...</think> blocks (often added by reasoning models) even if unclosed
+    text = re.sub(r"<think>.*?(</think>|$)", "", text, flags=re.DOTALL).strip()
     
     text = re.sub(r"^```json\s*|\s*```$", "", text.strip())
     try:
@@ -232,8 +233,9 @@ def llm_summarize_report(report_data: dict) -> dict | None:
                     "model": "qwen/qwen3.6-27b",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.2,
+                    "max_tokens": 4096,
                 },
-                timeout=15,
+                timeout=45,
             )
             if resp.status_code != 200:
                 return {"error": f"Groq API Error ({resp.status_code}): {resp.text}"}
