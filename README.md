@@ -5,27 +5,33 @@ Built for SIH 2026 — PS 26106 (AICTE, Cyber Security Cell)
 Detects phishing/spoofed/impersonated emails, traces their transmission path,
 geolocates probable origin, and generates forensic reports for investigators.
 
+## Live Links
+
+- **Frontend (Web App)**: [https://masteryashgupta.github.io/sentinel/](https://masteryashgupta.github.io/sentinel/)
+- **Backend API**: `https://sentinel-production-3abc.up.railway.app`
+- **ML Service API**: `https://feisty-alignment-production-99a8.up.railway.app`
+
 ## Architecture
 
 ```
-frontend/          React + Vite + Tailwind  → deploy to Vercel
-backend/            Node/Express (orchestration, auth, cases)  → deploy to Render
-backend/ml-service/  Python FastAPI (parsing, NLP, geolocation) → deploy to Render (2nd service)
+frontend/          React + Vite + Tailwind  → deploy to GitHub Pages
+backend/            Node/Express (orchestration, auth, cases)  → deploy to Railway
+backend/ml-service/  Python FastAPI (parsing, NLP, geolocation) → deploy to Railway (2nd service)
 supabase/            SQL schema for Postgres
 ```
 
 Data flow:
 
 ```
-Browser → Vercel (frontend)
-              │  REST
-              ▼
-        Render: Node backend  ──REST──▶  Render: Python ml-service
-              │                                │
-              ▼                                ▼
-         Supabase Postgres            mailparser / SPF-DKIM-DMARC /
-         (cases, indicators,          IP geolocation / WHOIS /
-          alerts, campaigns)          LLM classification
+Browser → GitHub Pages (frontend)
+               │  REST
+               ▼
+         Railway: Node backend  ──REST──▶  Railway: Python ml-service
+               │                                │
+               ▼                                ▼
+          Supabase Postgres            mailparser / SPF-DKIM-DMARC /
+          (cases, indicators,          IP geolocation / WHOIS /
+           alerts, campaigns)          LLM classification
 ```
 
 ## 1. Local setup
@@ -64,30 +70,25 @@ npm run dev                     # runs on port 5173
 
 ## 3. Deployment
 
-### Frontend → Vercel
-- Import the repo, set **Root Directory** to `frontend`
-- Framework preset: Vite
-- Env var: `VITE_API_URL` = your Render backend URL
-- Deploy — free Hobby tier, zero config beyond that
+### Frontend → GitHub Pages
+- This is fully automated via GitHub Actions (`.github/workflows/deploy-frontend.yml`).
+- Every push to the `main` branch automatically builds the React app and deploys it.
+- **Base path**: Configured in `vite.config.js` to `/sentinel/`.
+- **SPA Routing**: Handled seamlessly by copying `index.html` to `404.html` during the build step.
 
-### Backend → Render (Web Service #1)
-- New Web Service, **Root Directory**: `backend`
-- Build command: `npm install`
-- Start command: `npm start`
-- Env vars: `SUPABASE_URL`, `SUPABASE_KEY`, `ML_SERVICE_URL` (the ml-service's Render URL)
-- Free tier is fine for the demo
+### Backend → Railway (Node Service)
+- Connect repository to Railway dashboard.
+- **Root Directory**: `backend/`
+- Build command: `npm install` (Auto-detected)
+- Start command: `npm start` (Auto-detected)
+- Env vars: `SUPABASE_URL`, `SUPABASE_KEY`, `ML_SERVICE_URL` (the ML service's Railway URL).
 
-### ML service → Render (Web Service #2)
-- New Web Service, **Root Directory**: `backend/ml-service`
-- Build command: `pip install -r requirements.txt`
-- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Env vars: `GROQ_API_KEY` (or `GEMINI_API_KEY`) — optional, falls back to rule-based scoring if absent
-
-### Keep both Render services warm
-Render's free tier spins down after 15 min idle (~30-50s cold start). Use a free
-uptime pinger (cron-job.org, UptimeRobot, or similar) hitting these every 10 minutes:
-- `https://<your-backend>.onrender.com/api/health`
-- `https://<your-ml-service>.onrender.com/health`
+### ML service → Railway (Python Service)
+- Connect repository to Railway dashboard.
+- **Root Directory**: `backend/ml-service/`
+- Build command: `pip install -r requirements.txt` (Auto-detected)
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (Read directly from the `Procfile` included in the repo).
+- Env vars: `GROQ_API_KEY` (or `GEMINI_API_KEY`) — optional, falls back to rule-based scoring if absent.
 
 ## 4. What each module does (maps to PS 26106 key components)
 
