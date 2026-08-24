@@ -97,7 +97,7 @@ function ResultView({ result }) {
   const handleGenerateSummary = async () => {
     setAiLoading(true);
     try {
-      const res = await getCaseAISummary(result.id);
+      const res = await getCaseAISummary(result.case.id);
       if (res.error) {
         throw new Error(res.error);
       }
