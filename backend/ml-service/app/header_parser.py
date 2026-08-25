@@ -20,7 +20,10 @@ def parse_email(raw_content: bytes | str) -> dict:
 
     from_addr = mail.from_[0][1] if mail.from_ else None
     from_name = mail.from_[0][0] if mail.from_ else None
-    return_path = headers.get("Return-Path", "").strip("<>")
+    return_path = headers.get("Return-Path", "")
+    if isinstance(return_path, list):
+        return_path = return_path[0] if len(return_path) > 0 else ""
+    return_path = str(return_path).strip("<>")
     reply_to = mail.reply_to[0][1] if mail.reply_to else None
     message_id = mail.message_id
     received_chain = mail.received or []

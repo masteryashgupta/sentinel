@@ -9,6 +9,7 @@ import CampaignDetail from "./pages/CampaignDetail";
 import Blacklist from "./pages/Blacklist";
 import Alerts from "./pages/Alerts";
 import Settings from "./pages/Settings";
+import GmailSync from "./pages/GmailSync";
 import { useEffect, useState } from "react";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Routes location={location}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/analyze" element={<Analyze />} />
+          <Route path="/gmail-sync" element={<GmailSync />} />
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:id" element={<CaseDetail />} />
           <Route path="/campaigns" element={<Campaigns />} />

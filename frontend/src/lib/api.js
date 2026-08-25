@@ -111,3 +111,45 @@ export async function acknowledgeAlert(id) {
   if (!res.ok) throw new Error("Failed to acknowledge alert");
   return res.json();
 }
+
+export function getGmailAuthUrl() {
+  return `${API_URL}/api/gmail/auth`;
+}
+
+export async function getGmailStatus() {
+  const res = await fetch(`${API_URL}/api/gmail/status`);
+  if (!res.ok) throw new Error("Failed to get Gmail status");
+  return res.json();
+}
+
+export async function disconnectGmail() {
+  const res = await fetch(`${API_URL}/api/gmail/disconnect`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to disconnect Gmail");
+  return res.json();
+}
+
+export async function fetchGmailInbox() {
+  const res = await fetch(`${API_URL}/api/gmail/inbox`);
+  if (!res.ok) {
+    let msg = "Failed to fetch inbox";
+    try {
+      const errData = await res.json();
+      msg = errData.error || msg;
+    } catch(e) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export async function analyzeGmailMessage(id) {
+  const res = await fetch(`${API_URL}/api/gmail/analyze/${id}`, { method: "POST" });
+  if (!res.ok) {
+    let msg = "Analysis failed";
+    try {
+      const errData = await res.json();
+      msg = errData.error || msg;
+    } catch(e) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}

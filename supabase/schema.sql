@@ -120,3 +120,21 @@ create policy "allow all - demo" on indicators for all using (true) with check (
 create policy "allow all - demo" on campaigns for all using (true) with check (true);
 create policy "allow all - demo" on campaign_cases for all using (true) with check (true);
 create policy "allow all - demo" on audit_log for all using (true) with check (true);
+
+-- Gmail Integration
+create table if not exists gmail_connections (
+  id uuid primary key default uuid_generate_v4(),
+  email_address text,
+  access_token text,
+  refresh_token text,
+  token_expiry timestamptz,
+  connected_at timestamptz default now(),
+  last_synced_at timestamptz
+);
+
+alter table cases add column if not exists gmail_message_id text;
+create unique index if not exists idx_cases_gmail_message_id
+  on cases(gmail_message_id) where gmail_message_id is not null;
+
+alter table gmail_connections enable row level security;
+create policy "allow all - demo" on gmail_connections for all using (true) with check (true);

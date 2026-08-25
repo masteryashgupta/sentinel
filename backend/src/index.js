@@ -11,6 +11,7 @@ import reportsRouter from "./routes/reports.js";
 import blacklistRouter from "./routes/blacklist.js";
 import alertsRouter from "./routes/alerts.js";
 import retentionRouter from "./routes/retention.js";
+import gmailRouter from "./routes/gmail.js";
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ app.use("/api/reports", reportsRouter);
 app.use("/api/blacklist", blacklistRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/retention", retentionRouter);
+app.use("/api/gmail", gmailRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });

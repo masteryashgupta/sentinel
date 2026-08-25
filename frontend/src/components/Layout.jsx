@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X, Mail } from "lucide-react";
 import { listAlerts, fetchSystemStatus } from "../lib/api";
 
 const navGroups = [
@@ -9,6 +9,7 @@ const navGroups = [
     items: [
       { to: "/", label: "Dashboard", icon: LayoutDashboard },
       { to: "/analyze", label: "Analyze", icon: Activity },
+      { to: "/gmail-sync", label: "Gmail Sync", icon: Mail },
     ]
   },
   {

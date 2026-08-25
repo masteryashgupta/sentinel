@@ -3,10 +3,9 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+load_dotenv()
 
 from app import header_parser, geolocation, detection
-
-load_dotenv()
 
 app = FastAPI(title="Sentinel ML Service", version="1.0.0")
 
