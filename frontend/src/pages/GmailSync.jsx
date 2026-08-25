@@ -5,7 +5,7 @@ import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
 import Toast from "../components/ui/Toast";
-import { getGmailAuthUrl, getGmailStatus, disconnectGmail, fetchGmailInbox, analyzeGmailMessage } from "../lib/api";
+import { getGmailAuthUrl, getGmailStatus, disconnectGmail, fetchGmailInbox, analyzeGmailMessage, addBlacklist } from "../lib/api";
 import { Mail, Unplug, CheckCircle, Play, FileSearch } from "lucide-react";
 
 export default function GmailSync() {
@@ -118,6 +118,19 @@ export default function GmailSync() {
 
       try {
           const res = await analyzeGmailMessage(id);
+          
+          if (res.case.fraud_score > 75) {
+              setInbox(prev => {
+                  const msg = prev.find(m => m.id === id);
+                  if (msg && msg.from) {
+                      const emailMatch = msg.from.match(/<([^>]+)>/);
+                      const emailAddress = emailMatch ? emailMatch[1] : msg.from;
+                      addBlacklist('email', emailAddress, 'Auto-blacklisted by Gmail Sync').catch(err => console.error("Failed to auto-blacklist", err));
+                  }
+                  return prev;
+              });
+          }
+          
           setToast({ message: `Analyzed! Score: ${res.case.fraud_score}`, type: "success" });
           // Update the list to show as analyzed
           setInbox(prev => prev.map(msg => msg.id === id ? { ...msg, analyzed: true, caseId: res.case.id } : msg));
