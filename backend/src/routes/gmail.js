@@ -1,6 +1,6 @@
 import express from "express";
 import { google } from "googleapis";
-import { oauth2Client } from "../lib/googleOAuth.js";
+import { getOAuthClient } from "../lib/googleOAuth.js";
 import { supabase } from "../lib/supabase.js";
 import { analyzeRawEmail } from "./cases.js";
 import crypto from "crypto";
@@ -9,6 +9,7 @@ const router = express.Router();
 
 router.get("/auth", (req, res) => {
   const state = req.userId; // encode user ID in state so callback knows who it is
+  const oauth2Client = getOAuthClient();
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -28,6 +29,7 @@ router.get("/oauth/callback", async (req, res) => {
   }
 
   try {
+    const oauth2Client = getOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
     
@@ -85,6 +87,7 @@ router.post("/disconnect", async (req, res) => {
   const { data } = await userClient.from("gmail_connections").select("*").eq("user_id", req.userId).limit(1).maybeSingle();
   if (data && data.access_token) {
     try {
+      const oauth2Client = getOAuthClient();
       await oauth2Client.revokeToken(data.access_token);
     } catch (e) {
       console.warn("Revoke token failed", e);
