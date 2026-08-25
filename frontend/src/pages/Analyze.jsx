@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { UploadCloud, File, AlertCircle, Shield, Check, X, ShieldAlert, Cpu } from "lucide-react";
-import { analyzeEmail, getCaseAISummary } from "../lib/api";
+import { analyzeEmail, getCaseAISummary, addBlacklist } from "../lib/api";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -19,6 +19,14 @@ export default function Analyze() {
     try {
       const res = await analyzeEmail(file);
       setResult(res);
+      
+      if (res.analysis?.scoring?.fraud_score > 75 && res.analysis?.email?.from_address) {
+          try {
+              await addBlacklist('email', res.analysis.email.from_address, 'Auto-blacklisted by EML Upload');
+          } catch (err) {
+              console.error("Failed to auto-blacklist", err);
+          }
+      }
     } catch (e) {
       setError(e.message);
     } finally {
