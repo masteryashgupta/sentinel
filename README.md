@@ -5,6 +5,20 @@ It helps analyze suspicious emails, detect phishing/spoofing signals, trace like
 
 This repository is set up for local development.
 
+## Quick Start
+
+1. Set up Supabase and run `supabase/schema.sql`.
+2. Start ML service:
+   - `cd backend/ml-service`
+   - create/activate venv, install requirements, run on port `8000`
+3. Start backend:
+   - `cd backend`
+   - install deps, configure `.env`, run `npm run dev` on port `4000`
+4. Start frontend:
+   - `cd frontend`
+   - install deps, configure `.env`, run `npm run dev` on port `5173`
+5. Open the app at `http://localhost:5173`
+
 ## Project Overview
 
 ```
