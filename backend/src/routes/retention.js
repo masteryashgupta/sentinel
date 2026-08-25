@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../lib/supabase.js";
+import { createUserClient } from "../lib/supabase.js";
 
 const router = express.Router();
 
@@ -10,7 +10,8 @@ const router = express.Router();
  */
 router.get("/eligible", async (req, res) => {
   try {
-    const { data: cases, error } = await supabase
+    const userClient = createUserClient(req.token);
+    const { data: cases, error } = await userClient
       .from("cases")
       .select("id, subject, from_address, fraud_score, category, status, created_at, retention_days");
 
@@ -45,7 +46,8 @@ router.patch("/:id", async (req, res) => {
     return res.status(400).json({ error: "retention_days must be a number" });
   }
 
-  const { data, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data, error } = await userClient
     .from("cases")
     .update({ retention_days })
     .eq("id", req.params.id)

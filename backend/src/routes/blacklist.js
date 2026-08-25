@@ -1,11 +1,12 @@
 import express from "express";
-import { supabase } from "../lib/supabase.js";
+import { createUserClient } from "../lib/supabase.js";
 
 const router = express.Router();
 
 /** GET /api/blacklist — list all blacklisted indicators */
 router.get("/", async (req, res) => {
-  const { data, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data, error } = await userClient
     .from("known_bad_indicators")
     .select("*")
     .order("added_at", { ascending: false });
@@ -21,9 +22,11 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields: type and value" });
   }
 
-  const { data, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data, error } = await userClient
     .from("known_bad_indicators")
     .insert({
+      user_id: req.userId,
       type: type.toLowerCase(),
       value: value.trim(),
       source: source || "analyst_entry",

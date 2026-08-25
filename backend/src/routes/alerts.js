@@ -1,11 +1,12 @@
 import express from "express";
-import { supabase } from "../lib/supabase.js";
+import { createUserClient } from "../lib/supabase.js";
 
 const router = express.Router();
 
 /** GET /api/alerts — list all alerts, most recent first */
 router.get("/", async (req, res) => {
-  const { data, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data, error } = await userClient
     .from("alerts")
     .select("*, cases(subject, from_address, fraud_score, category)")
     .order("created_at", { ascending: false });
@@ -16,7 +17,8 @@ router.get("/", async (req, res) => {
 
 /** PATCH /api/alerts/:id/acknowledge — acknowledge an alert */
 router.patch("/:id/acknowledge", async (req, res) => {
-  const { data, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data, error } = await userClient
     .from("alerts")
     .update({ acknowledged: true })
     .eq("id", req.params.id)

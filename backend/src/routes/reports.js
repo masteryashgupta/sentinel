@@ -1,12 +1,13 @@
 import express from "express";
 import PDFDocument from "pdfkit";
-import { supabase } from "../lib/supabase.js";
+import { createUserClient } from "../lib/supabase.js";
 
 const router = express.Router();
 
 /** GET /api/reports/:caseId — generate a forensic PDF report for a case */
 router.get("/:caseId", async (req, res) => {
-  const { data: c, error } = await supabase
+  const userClient = createUserClient(req.token);
+  const { data: c, error } = await userClient
     .from("cases")
     .select("*")
     .eq("id", req.params.caseId)
@@ -14,7 +15,7 @@ router.get("/:caseId", async (req, res) => {
 
   if (error || !c) return res.status(404).json({ error: "Case not found" });
 
-  const { data: indicators } = await supabase
+  const { data: indicators } = await userClient
     .from("indicators")
     .select("*")
     .eq("case_id", req.params.caseId);
