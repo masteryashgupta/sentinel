@@ -34,14 +34,32 @@ export async function analyzeRawEmail(buffer, filename, userClient, userId) {
   const analysis = await mlResponse.json();
 
   const attributionCategory = classifyAttribution(analysis);
-  const matchesBlacklist = await checkBlacklist(analysis.indicators, userClient);
+  
+  const indicatorsToCheck = [...(analysis.indicators || [])];
+  if (analysis.email?.from_address) {
+    indicatorsToCheck.push({ type: 'email', value: analysis.email.from_address });
+    const parts = analysis.email.from_address.split('@');
+    if (parts.length === 2) {
+      indicatorsToCheck.push({ type: 'domain', value: parts[1] });
+    }
+  }
+  if (analysis.email?.sender_domain) {
+    indicatorsToCheck.push({ type: 'domain', value: analysis.email.sender_domain });
+  }
+
+  const matchesBlacklist = await checkBlacklist(indicatorsToCheck, userClient);
 
   if (matchesBlacklist) {
+    analysis.header_anomalies = analysis.header_anomalies || [];
     analysis.header_anomalies.unshift({
       type: "matches_known_bad_indicator",
       severity: "high",
-      detail: "Case contains one or more indicators (IP, domain, DKIM key, or URL) matching the analyst blacklist.",
+      detail: "Case contains one or more indicators (IP, domain, email, DKIM key, or URL) matching the analyst blacklist.",
     });
+    
+    analysis.scoring = analysis.scoring || {};
+    analysis.scoring.fraud_score = 100;
+    analysis.scoring.category = "known_malicious_indicator";
   }
 
   const { data: newCase, error } = await userClient
