@@ -25,12 +25,15 @@ export default function Cases() {
     setStats({ total: 0, highRisk: 0, campaigns: 0 });
 
     try {
-      const data = await listCases();
+      const [data, campaignsData] = await Promise.all([
+        listCases(),
+        listCampaigns().catch(() => [])
+      ]);
       setCases(data);
       setStats({
         total: data.length,
         highRisk: data.filter(c => c.fraud_score >= 50).length,
-        campaigns: new Set(data.map(c => c.campaign_id).filter(Boolean)).size
+        campaigns: campaignsData.length
       });
     } catch (e) {
       console.error(e);
