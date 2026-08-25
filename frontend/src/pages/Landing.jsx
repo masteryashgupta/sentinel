@@ -105,7 +105,7 @@ export default function Landing() {
       
       {/* Footer */}
       <footer className="py-8 border-t border-white/10 text-center text-sm text-gray-500">
-        <p>© 2026 Sentinel Security. Open Source by Yash Gupta.</p>
+        <p>© 2026 Sentinel Security. Build by team Innovex</p>
       </footer>
     </div>
   );
