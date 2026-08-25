@@ -99,8 +99,18 @@ export async function getCampaign(id) {
   return res.json();
 }
 
-export function reportUrl(caseId) {
-  return `${API_URL}/api/reports/${caseId}`;
+export async function downloadReport(caseId) {
+  const res = await fetchWithAuth(`${API_URL}/api/reports/${caseId}`);
+  if (!res.ok) throw new Error("Failed to download report");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sentinel_report_${caseId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }
 
 export async function listBlacklist() {

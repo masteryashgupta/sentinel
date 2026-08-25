@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network, Cpu } from "lucide-react";
-import { getCase, updateCaseStatus, reportUrl, getCaseAuditLog, getCaseAISummary } from "../lib/api";
+import { getCase, updateCaseStatus, downloadReport, getCaseAuditLog, getCaseAISummary } from "../lib/api";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -181,9 +181,15 @@ export default function CaseDetail() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <a href={reportUrl(c.id)} target="_blank" rel="noreferrer" className="inline-block">
-          <Button variant="primary" icon={Download}>Download Report (PDF)</Button>
-        </a>
+        <Button 
+          variant="primary" 
+          icon={Download} 
+          onClick={() => {
+            downloadReport(c.id).catch(e => setError("Failed to download report: " + e.message));
+          }}
+        >
+          Download Report (PDF)
+        </Button>
         
         <div className="flex items-center gap-2 bg-[var(--bg-panel)] border border-[var(--border)] rounded-md px-3 py-1.5 shadow-sm">
           <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Status:</span>
