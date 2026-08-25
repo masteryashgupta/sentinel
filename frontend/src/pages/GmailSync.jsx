@@ -82,8 +82,13 @@ export default function GmailSync() {
      }
   };
 
-  const handleConnect = () => {
-    window.location.href = getGmailAuthUrl();
+  const handleConnect = async () => {
+    try {
+      const url = await getGmailAuthUrl();
+      window.location.href = url;
+    } catch (e) {
+      setToast({ message: "Failed to get auth URL", type: "error" });
+    }
   };
 
   const handleDisconnect = async () => {

@@ -8,14 +8,14 @@ import crypto from "crypto";
 const router = express.Router();
 
 router.get("/auth", (req, res) => {
-  const state = crypto.randomBytes(16).toString("hex");
+  const state = req.userId; // encode user ID in state so callback knows who it is
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     scope: ["https://www.googleapis.com/auth/gmail.readonly"],
     state: state,
   });
-  res.redirect(url);
+  res.json({ url });
 });
 
 router.get("/oauth/callback", async (req, res) => {
@@ -35,11 +35,16 @@ router.get("/oauth/callback", async (req, res) => {
     const profile = await gmail.users.getProfile({ userId: "me" });
     const emailAddress = profile.data.emailAddress;
 
-    // We use a basic insert and onConflict isn't possible natively without a unique constraint
-    // But since it's just for one user, we can clear the table and insert the new one
-    await supabase.from("gmail_connections").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // clear all
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token || ""); // Callback might not have token, but wait, this is a redirect!
+    // Since callback is a browser redirect, req.token is undefined. We must rely on state (userId).
+    // So we use service role here, but with strict .eq() filtering.
+    // Or we can just insert with the user_id derived from state.
+    
+    await supabase.from("gmail_connections").delete().eq("user_id", state);
 
     const { error } = await supabase.from("gmail_connections").insert({
+      user_id: state,
       email_address: emailAddress,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -56,9 +61,13 @@ router.get("/oauth/callback", async (req, res) => {
 });
 
 router.get("/status", async (req, res) => {
-  const { data, error } = await supabase
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+
+  const { data, error } = await userClient
     .from("gmail_connections")
     .select("id, email_address, created_at")
+    .eq("user_id", req.userId)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -70,7 +79,10 @@ router.get("/status", async (req, res) => {
 });
 
 router.post("/disconnect", async (req, res) => {
-  const { data } = await supabase.from("gmail_connections").select("*").limit(1).maybeSingle();
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+
+  const { data } = await userClient.from("gmail_connections").select("*").eq("user_id", req.userId).limit(1).maybeSingle();
   if (data && data.access_token) {
     try {
       await oauth2Client.revokeToken(data.access_token);
@@ -78,13 +90,16 @@ router.post("/disconnect", async (req, res) => {
       console.warn("Revoke token failed", e);
     }
   }
-  await supabase.from("gmail_connections").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  await userClient.from("gmail_connections").delete().eq("user_id", req.userId);
   res.json({ success: true });
 });
 
 router.get("/inbox", async (req, res) => {
   try {
-    const { data: conn } = await supabase.from("gmail_connections").select("*").limit(1).maybeSingle();
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token);
+
+    const { data: conn } = await userClient.from("gmail_connections").select("*").eq("user_id", req.userId).limit(1).maybeSingle();
     if (!conn) {
       return res.status(400).json({ error: "Not connected to Gmail" });
     }
@@ -105,7 +120,7 @@ router.get("/inbox", async (req, res) => {
       const updates = { access_token: tokens.access_token };
       if (tokens.refresh_token) updates.refresh_token = tokens.refresh_token;
       if (tokens.expiry_date) updates.token_expiry = new Date(tokens.expiry_date).toISOString();
-      await supabase.from("gmail_connections").update(updates).eq("id", conn.id);
+      await userClient.from("gmail_connections").update(updates).eq("id", conn.id);
     });
 
     const gmail = google.gmail({ version: "v1", auth });
@@ -116,7 +131,7 @@ router.get("/inbox", async (req, res) => {
       listRes = await gmail.users.messages.list({ userId: "me", q: query, maxResults: 10 });
     } catch (err) {
        if (err.message.includes("invalid_grant") || err.message.includes("invalid_token")) {
-          await supabase.from("gmail_connections").delete().eq("id", conn.id);
+          await userClient.from("gmail_connections").delete().eq("id", conn.id);
           return res.status(401).json({ error: "Token revoked or invalid, please reconnect" });
        }
        throw err;
@@ -128,7 +143,7 @@ router.get("/inbox", async (req, res) => {
     // Fetch metadata for each message
     await Promise.all(messages.map(async (msg) => {
        const messageId = msg.id;
-       const { data: existing } = await supabase.from("cases").select("id").eq("gmail_message_id", messageId).maybeSingle();
+       const { data: existing } = await userClient.from("cases").select("id").eq("gmail_message_id", messageId).maybeSingle();
        
        try {
            const msgRes = await gmail.users.messages.get({ 
@@ -163,15 +178,18 @@ router.get("/inbox", async (req, res) => {
 
 router.post("/analyze/:id", async (req, res) => {
   try {
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token);
+
     const messageId = req.params.id;
     
     // Check if already analyzed
-    const { data: existing } = await supabase.from("cases").select("*").eq("gmail_message_id", messageId).maybeSingle();
+    const { data: existing } = await userClient.from("cases").select("*").eq("gmail_message_id", messageId).maybeSingle();
     if (existing) {
         return res.json({ case: existing, already_analyzed: true });
     }
 
-    const { data: conn } = await supabase.from("gmail_connections").select("*").limit(1).maybeSingle();
+    const { data: conn } = await userClient.from("gmail_connections").select("*").eq("user_id", req.userId).limit(1).maybeSingle();
     if (!conn) return res.status(400).json({ error: "Not connected to Gmail" });
 
     const auth = new google.auth.OAuth2(
@@ -193,9 +211,9 @@ router.post("/analyze/:id", async (req, res) => {
     const rawBase64 = msgRes.data.raw;
     const rawBuffer = Buffer.from(rawBase64.replace(/-/g, "+").replace(/_/g, "/"), "base64");
 
-    const result = await analyzeRawEmail(rawBuffer, `gmail_${messageId}.eml`);
+    const result = await analyzeRawEmail(rawBuffer, `gmail_${messageId}.eml`, userClient, req.userId);
     
-    await supabase.from("cases").update({ gmail_message_id: messageId }).eq("id", result.case.id);
+    await userClient.from("cases").update({ gmail_message_id: messageId }).eq("id", result.case.id);
     res.json({ case: result.case, analysis: result.analysis, campaign_id: result.campaign_id });
   } catch (err) {
     console.error(`Failed to analyze email ${req.params.id}:`, err);

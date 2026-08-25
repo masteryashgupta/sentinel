@@ -14,7 +14,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const ML_SERVICE_URL = (process.env.ML_SERVICE_URL || "http://localhost:8000").replace(/^"|"$/g, "");
 
-export async function analyzeRawEmail(buffer, filename) {
+export async function analyzeRawEmail(buffer, filename, userClient, userId) {
   const form = new FormData();
   form.append("file", buffer, { filename });
 
@@ -34,7 +34,7 @@ export async function analyzeRawEmail(buffer, filename) {
   const analysis = await mlResponse.json();
 
   const attributionCategory = classifyAttribution(analysis);
-  const matchesBlacklist = await checkBlacklist(analysis.indicators);
+  const matchesBlacklist = await checkBlacklist(analysis.indicators, userClient);
 
   if (matchesBlacklist) {
     analysis.header_anomalies.unshift({
@@ -44,9 +44,10 @@ export async function analyzeRawEmail(buffer, filename) {
     });
   }
 
-  const { data: newCase, error } = await supabase
+  const { data: newCase, error } = await userClient
     .from("cases")
     .insert({
+      user_id: userId,
       filename,
       subject: analysis.email.subject,
       from_address: analysis.email.from_address,
@@ -83,7 +84,8 @@ export async function analyzeRawEmail(buffer, filename) {
 
   // Real-time alert creation for high-risk threat (fraud_score >= 75)
   if (analysis.scoring.fraud_score >= 75) {
-    await supabase.from("alerts").insert({
+    await userClient.from("alerts").insert({
+      user_id: userId,
       case_id: newCase.id,
       message: `HIGH THREAT DETECTED [Score: ${analysis.scoring.fraud_score}/100]: "${analysis.email.subject || "No Subject"}" from ${analysis.email.from_address || "unknown"}`,
       acknowledged: false,
@@ -92,14 +94,14 @@ export async function analyzeRawEmail(buffer, filename) {
 
   // store indicators for campaign correlation
   if (analysis.indicators?.length) {
-    await supabase.from("indicators").insert(
+    await userClient.from("indicators").insert(
       analysis.indicators.map((i) => ({ case_id: newCase.id, type: i.type, value: i.value }))
     );
   }
 
-  const campaignId = await correlateCase(newCase.id, analysis.indicators);
+  const campaignId = await correlateCase(newCase.id, analysis.indicators, userClient, userId);
 
-  await supabase.from("audit_log").insert({
+  await userClient.from("audit_log").insert({
     case_id: newCase.id,
     action: "case_created",
     actor: "system",
@@ -120,7 +122,10 @@ router.post("/analyze", upload.single("email"), async (req, res) => {
       return res.status(400).json({ error: "No email file uploaded (field name: 'email')" });
     }
 
-    const result = await analyzeRawEmail(req.file.buffer, req.file.originalname);
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token);
+
+    const result = await analyzeRawEmail(req.file.buffer, req.file.originalname, userClient, req.userId);
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -130,7 +135,10 @@ router.post("/analyze", upload.single("email"), async (req, res) => {
 
 /** GET /api/cases — list all cases, most recent first */
 router.get("/", async (req, res) => {
-  const { data, error } = await supabase
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+  
+  const { data, error } = await userClient
     .from("cases")
     .select("*")
     .order("created_at", { ascending: false });
@@ -141,7 +149,10 @@ router.get("/", async (req, res) => {
 
 /** GET /api/cases/:id — full case detail, with optional ?role=viewer masking */
 router.get("/:id", async (req, res) => {
-  const { data: caseData, error } = await supabase
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+  
+  const { data: caseData, error } = await userClient
     .from("cases")
     .select("*")
     .eq("id", req.params.id)
@@ -149,12 +160,12 @@ router.get("/:id", async (req, res) => {
 
   if (error) return res.status(404).json({ error: "Case not found" });
 
-  const { data: indicators } = await supabase
+  const { data: indicators } = await userClient
     .from("indicators")
     .select("*")
     .eq("case_id", req.params.id);
 
-  const { data: campaignLink } = await supabase
+  const { data: campaignLink } = await userClient
     .from("campaign_cases")
     .select("campaign_id, campaigns(*)")
     .eq("case_id", req.params.id)
@@ -169,7 +180,10 @@ router.get("/:id", async (req, res) => {
 
 /** GET /api/cases/:id/audit-log — chain-of-custody log for a case */
 router.get("/:id/audit-log", async (req, res) => {
-  const { data, error } = await supabase
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+  
+  const { data, error } = await userClient
     .from("audit_log")
     .select("*")
     .eq("case_id", req.params.id)
@@ -183,8 +197,11 @@ router.get("/:id/audit-log", async (req, res) => {
 /** GET /api/cases/:id/ai-summary — fetch AI summary for the case */
 router.get("/:id/ai-summary", async (req, res) => {
   try {
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token);
+
     // 1. Fetch case details
-    const { data: caseData, error } = await supabase
+    const { data: caseData, error } = await userClient
       .from("cases")
       .select("*")
       .eq("id", req.params.id)
@@ -193,7 +210,7 @@ router.get("/:id/ai-summary", async (req, res) => {
     if (error) return res.status(404).json({ error: "Case not found" });
 
     // 2. Fetch indicators
-    const { data: indicators } = await supabase
+    const { data: indicators } = await userClient
       .from("indicators")
       .select("*")
       .eq("case_id", req.params.id);
@@ -223,8 +240,11 @@ router.get("/:id/ai-summary", async (req, res) => {
 
 /** PATCH /api/cases/:id/status — analyst updates case status */
 router.patch("/:id/status", async (req, res) => {
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+
   const { status, reviewed_by } = req.body;
-  const { data, error } = await supabase
+  const { data, error } = await userClient
     .from("cases")
     .update({ status, reviewed_by })
     .eq("id", req.params.id)
@@ -233,7 +253,7 @@ router.patch("/:id/status", async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
 
-  await supabase.from("audit_log").insert({
+  await userClient.from("audit_log").insert({
     case_id: req.params.id,
     action: `status_changed_to_${status}`,
     actor: reviewed_by || "unknown",

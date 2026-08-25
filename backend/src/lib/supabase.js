@@ -15,3 +15,17 @@ export const supabase = createClient(
   supabaseUrl || "https://dummy.supabase.co", 
   supabaseKey || "dummy"
 );
+
+export const createUserClient = (token) => {
+  return createClient(
+    supabaseUrl || "https://dummy.supabase.co",
+    supabaseKey || "dummy",
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    }
+  );
+};

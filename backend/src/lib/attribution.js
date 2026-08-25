@@ -47,11 +47,11 @@ export function classifyAttribution(analysis) {
 /**
  * Checks extracted indicators against the known_bad_indicators table.
  */
-export async function checkBlacklist(indicators) {
+export async function checkBlacklist(indicators, userClient) {
   if (!indicators || indicators.length === 0) return false;
 
   for (const ind of indicators) {
-    const { data } = await supabase
+    const { data } = await userClient
       .from("known_bad_indicators")
       .select("id")
       .eq("type", ind.type)

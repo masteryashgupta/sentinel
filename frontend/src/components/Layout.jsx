@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X, Mail } from "lucide-react";
+import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X, Mail, LogOut } from "lucide-react";
 import { listAlerts, fetchSystemStatus } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const navGroups = [
   {
     title: "Overview",
     items: [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/analyze", label: "Analyze", icon: Activity },
       { to: "/gmail-sync", label: "Gmail Sync", icon: Mail },
     ]
@@ -96,6 +97,7 @@ export default function Layout({ children }) {
   const [unackCount, setUnackCount] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     fetchAlertsCount();
@@ -204,6 +206,15 @@ export default function Layout({ children }) {
             </>
           )}
         </NavLink>
+        {user && (
+          <button
+            onClick={logout}
+            className="w-full mt-2 group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-300 text-[var(--danger)] hover:bg-red-500/10"
+          >
+            <LogOut size={18} className="transition-transform duration-300 group-hover:scale-110" />
+            <span className="font-medium tracking-wide">Logout</span>
+          </button>
+        )}
       </div>
     </>
   );
@@ -254,6 +265,11 @@ export default function Layout({ children }) {
 
           {/* Right Controls */}
           <div className="flex items-center gap-4 md:gap-6">
+            {user && (
+              <span className="text-sm font-medium text-[var(--text-secondary)] hidden sm:block">
+                {user.email}
+              </span>
+            )}
             <SystemStatus />
           </div>
         </header>

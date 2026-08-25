@@ -10,14 +10,12 @@
  * This is intentionally a transparent, explainable clustering rule rather than
  * an opaque ML model — investigators need to see *why* cases were linked.
  */
-import { supabase } from "./supabase.js";
-
-export async function correlateCase(caseId, indicators) {
+export async function correlateCase(caseId, indicators, userClient, userId) {
   if (!indicators || indicators.length === 0) return null;
 
   for (const indicator of indicators) {
     // does an existing campaign already key off this indicator?
-    const { data: existingCampaign } = await supabase
+    const { data: existingCampaign } = await userClient
       .from("campaigns")
       .select("*")
       .eq("shared_indicator_type", indicator.type)
@@ -25,10 +23,10 @@ export async function correlateCase(caseId, indicators) {
       .maybeSingle();
 
     if (existingCampaign) {
-      await supabase
+      await userClient
         .from("campaign_cases")
         .insert({ campaign_id: existingCampaign.id, case_id: caseId });
-      await supabase
+      await userClient
         .from("campaigns")
         .update({ case_count: existingCampaign.case_count + 1 })
         .eq("id", existingCampaign.id);
@@ -36,7 +34,7 @@ export async function correlateCase(caseId, indicators) {
     }
 
     // does another case already have this same indicator? if so, start a campaign
-    const { data: matchingIndicator } = await supabase
+    const { data: matchingIndicator } = await userClient
       .from("indicators")
       .select("case_id")
       .eq("type", indicator.type)
@@ -46,9 +44,10 @@ export async function correlateCase(caseId, indicators) {
       .maybeSingle();
 
     if (matchingIndicator) {
-      const { data: newCampaign } = await supabase
+      const { data: newCampaign } = await userClient
         .from("campaigns")
         .insert({
+          user_id: userId,
           name: `Campaign: ${indicator.type}=${indicator.value}`,
           shared_indicator_type: indicator.type,
           shared_indicator_value: indicator.value,
@@ -57,7 +56,7 @@ export async function correlateCase(caseId, indicators) {
         .select()
         .single();
 
-      await supabase.from("campaign_cases").insert([
+      await userClient.from("campaign_cases").insert([
         { campaign_id: newCampaign.id, case_id: caseId },
         { campaign_id: newCampaign.id, case_id: matchingIndicator.case_id },
       ]);

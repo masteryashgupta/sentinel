@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import http from "http";
 import https from "https";
 
+import { requireAuth } from './lib/requireAuth.js';
+import authRoutes from './routes/auth.js';
 import casesRouter from "./routes/cases.js";
 import campaignsRouter from "./routes/campaigns.js";
 import reportsRouter from "./routes/reports.js";
@@ -82,13 +84,14 @@ app.get("/api/system-status", async (req, res) => {
   });
 });
 
-app.use("/api/cases", casesRouter);
-app.use("/api/campaigns", campaignsRouter);
-app.use("/api/reports", reportsRouter);
-app.use("/api/blacklist", blacklistRouter);
-app.use("/api/alerts", alertsRouter);
-app.use("/api/retention", retentionRouter);
-app.use("/api/gmail", gmailRouter);
+app.use('/api/auth', authRoutes);
+app.use("/api/cases", requireAuth, casesRouter);
+app.use("/api/campaigns", requireAuth, campaignsRouter);
+app.use("/api/reports", requireAuth, reportsRouter);
+app.use("/api/blacklist", requireAuth, blacklistRouter);
+app.use("/api/alerts", requireAuth, alertsRouter);
+app.use("/api/retention", requireAuth, retentionRouter);
+app.use("/api/gmail", requireAuth, gmailRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });

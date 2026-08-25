@@ -138,3 +138,65 @@ create unique index if not exists idx_cases_gmail_message_id
 
 alter table gmail_connections enable row level security;
 create policy "allow all - demo" on gmail_connections for all using (true) with check (true);
+
+-- --------------------------------------------------------------------------------
+-- CUSTOM JWT AUTH & ROW LEVEL SECURITY (RLS)
+-- --------------------------------------------------------------------------------
+
+create table if not exists users (
+  id uuid primary key default uuid_generate_v4(),
+  email text unique not null,
+  password_hash text not null,
+  created_at timestamptz default now(),
+  last_login_at timestamptz
+);
+create unique index if not exists idx_users_email on users(lower(email));
+
+-- Add user_id to all root-level resources
+alter table cases add column if not exists user_id uuid;
+alter table campaigns add column if not exists user_id uuid;
+alter table gmail_connections add column if not exists user_id uuid;
+alter table known_bad_indicators add column if not exists user_id uuid;
+alter table alerts add column if not exists user_id uuid;
+
+-- Drop existing permissive "allow all - demo" policies
+drop policy if exists "allow all - demo" on cases;
+drop policy if exists "allow all - demo" on alerts;
+drop policy if exists "allow all - demo" on known_bad_indicators;
+drop policy if exists "allow all - demo" on indicators;
+drop policy if exists "allow all - demo" on campaigns;
+drop policy if exists "allow all - demo" on campaign_cases;
+drop policy if exists "allow all - demo" on audit_log;
+drop policy if exists "allow all - demo" on gmail_connections;
+
+-- Create RLS policies for root tables (enforcing user_id = auth.uid())
+create policy "users manage own cases" on cases
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "users manage own campaigns" on campaigns
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "users manage own gmail_connections" on gmail_connections
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "users manage own known_bad_indicators" on known_bad_indicators
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "users manage own alerts" on alerts
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- Create RLS policies for child/junction tables (checking via parent)
+create policy "users manage own indicators" on indicators
+  for all using (
+    exists (select 1 from cases where cases.id = indicators.case_id and cases.user_id = auth.uid())
+  );
+
+create policy "users manage own campaign_cases" on campaign_cases
+  for all using (
+    exists (select 1 from campaigns where campaigns.id = campaign_cases.campaign_id and campaigns.user_id = auth.uid())
+  );
+
+create policy "users manage own audit_log" on audit_log
+  for all using (
+    exists (select 1 from cases where cases.id = audit_log.case_id and cases.user_id = auth.uid())
+  );
