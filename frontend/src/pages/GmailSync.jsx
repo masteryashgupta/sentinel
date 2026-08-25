@@ -63,7 +63,8 @@ export default function GmailSync() {
      try {
        setFetchingInbox(true);
        const data = await fetchGmailInbox();
-       setInbox(data);
+       const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+       setInbox(sortedData);
        
        if (autoAnalyzeRef.current) {
            data.forEach(msg => {
