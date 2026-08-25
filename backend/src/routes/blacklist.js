@@ -37,5 +37,17 @@ router.post("/", async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
+/** DELETE /api/blacklist/:id — remove an indicator from the blacklist */
+router.delete("/:id", async (req, res) => {
+  const userClient = createUserClient(req.token);
+  const { error } = await userClient
+    .from("known_bad_indicators")
+    .delete()
+    .eq("id", req.params.id)
+    .eq("user_id", req.userId); // Ensure they can only delete their own
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true });
+});
 
 export default router;

@@ -129,6 +129,14 @@ export async function addBlacklist(type, value, source) {
   return res.json();
 }
 
+export async function deleteBlacklist(id) {
+  const res = await fetchWithAuth(`${API_URL}/api/blacklist/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete blacklist entry");
+  return res.json();
+}
+
 export async function fetchHealth() {
   const res = await fetchWithAuth(`${API_URL}/health`);
   if (!res.ok) throw new Error("Health check failed");

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Shield, Plus, Lock, ListFilter, Calendar } from "lucide-react";
-import { listBlacklist, addBlacklist } from "../lib/api";
+import { Shield, Plus, Lock, ListFilter, Calendar, Trash2 } from "lucide-react";
+import { listBlacklist, addBlacklist, deleteBlacklist } from "../lib/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
@@ -49,6 +49,16 @@ export default function Blacklist() {
       setError(err.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Are you sure you want to remove this indicator from the blacklist?")) return;
+    try {
+      await deleteBlacklist(id);
+      loadList();
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -104,6 +114,7 @@ export default function Blacklist() {
             >
               <option value="ip">IP Address</option>
               <option value="domain">Domain</option>
+              <option value="email">Email</option>
               <option value="dkim_key">DKIM Key</option>
               <option value="url">URL</option>
             </select>
@@ -181,6 +192,13 @@ export default function Blacklist() {
                   <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
                     <Calendar size={14} /> {new Date(entry.added_at).toLocaleDateString()}
                   </div>
+                  <button 
+                    onClick={() => handleDelete(entry.id)} 
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 rounded transition-colors ml-2 sm:ml-4"
+                    title="Delete entry"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
             ))}
