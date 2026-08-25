@@ -1,88 +1,88 @@
-# Sentinel — AI Email Threat Detection, GeoLocation & Forensic Intelligence Platform
+# Sentinel
 
-Built for SIH 2026 — PS 26106 (AICTE, Cyber Security Cell)
+Sentinel is an email threat detection and forensic intelligence platform.  
+It helps analyze suspicious emails, detect phishing/spoofing signals, trace likely origin paths, and generate investigation-ready outputs.
 
-Detects phishing/spoofed/impersonated emails, traces their transmission path, geolocates probable origin, and generates forensic reports for investigators.
+This repository is set up for local development.
 
-**Note:** This repository is currently configured for **local development and execution only**. All cloud deployment configurations have been removed to ensure complete control over the local environment and data isolation.
-
-## Architecture & Features
+## Project Overview
 
 ```
-frontend/            React + Vite + Tailwind (Premium Dark Mode UI)
-backend/             Node/Express (Orchestration, Auth, Gmail OAuth, Cases)
-backend/ml-service/  Python FastAPI (Parsing, NLP, Geolocation)
-supabase/            PostgreSQL with strict Row-Level Security (RLS)
+frontend/            React + Vite + Tailwind UI
+backend/             Node.js + Express API (auth, cases, reports, integrations)
+backend/ml-service/  Python FastAPI service (email parsing, detection, geolocation)
+supabase/            PostgreSQL schema and RLS policies
 ```
 
-**Key Security & Design Implementations:**
-- **Zero-Trust Database Access:** Operations are enforced via JWT token-scoped Supabase clients. Row-Level Security (RLS) is active on all tables, ensuring strict data isolation per user.
-- **Gmail OAuth Flow:** Integrated secure Gmail connection capabilities to seamlessly import and analyze live inbox data.
-- **Premium UI/UX:** A state-of-the-art dark mode aesthetic featuring glassmorphism, modern typography (Inter/Outfit), and interactive micro-animations.
+## Features
 
----
+- Email phishing and impersonation signal detection
+- Header and relay path analysis
+- Origin IP and domain intelligence checks
+- Case-based investigation workflow
+- Forensic reporting support
 
-## 1. Local Setup
+## How to Run Locally
 
-You must run three separate local servers (Frontend, Backend, and ML Service) concurrently.
+Run all three services at the same time:
+- ML Service (Python) on `http://localhost:8000`
+- Backend API (Node.js) on `http://localhost:4000`
+- Frontend (React) on `http://localhost:5173`
 
-### ML Service (Python)
+### 1) ML Service
+
 ```bash
 cd backend/ml-service
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env            # add GROQ_API_KEY or GEMINI_API_KEY (optional)
+cp .env.example .env            # optional: add GROQ_API_KEY or GEMINI_API_KEY
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Backend API (Node)
+### 2) Backend API
+
 ```bash
 cd backend
 npm install
-cp .env.example .env            
-# Add the following to your .env:
-# SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY
-# SUPABASE_JWT_SECRET
-# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
-# ML_SERVICE_URL=http://localhost:8000
-npm run dev                     # runs on port 4000
+cp .env.example .env
 ```
 
-### Frontend (React)
+Add required values to `backend/.env`:
+- `SUPABASE_URL`
+- `SUPABASE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_JWT_SECRET`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+- `ML_SERVICE_URL=http://localhost:8000`
+
+Start backend:
+
+```bash
+npm run dev
+```
+
+### 3) Frontend
+
 ```bash
 cd frontend
 npm install
-cp .env.example .env            
-# Add the following to your .env:
-# VITE_API_URL=http://localhost:4000
-npm run dev                     # runs on port 5173
+cp .env.example .env
 ```
 
----
+Add to `frontend/.env`:
+- `VITE_API_URL=http://localhost:4000`
 
-## 2. Database Setup (Supabase)
+Start frontend:
 
-1. Create a project at [supabase.com](https://supabase.com) (free tier).
-2. Open the SQL editor, paste the contents of `supabase/schema.sql`, and run it. This will build the tables and enable RLS policies.
-3. Copy your Project URL, `anon` public key, `service_role` key, and JWT Secret into `backend/.env`.
+```bash
+npm run dev
+```
 
----
+## Database Setup (Supabase)
 
-## 3. What Each Module Does (Maps to PS 26106 Key Components)
-
-| PS Component | Implementation |
-|---|---|
-| Fraudulent Email Detection Engine | `ml-service/app/detection.py` — LLM classification + rule-based BEC/phishing flags |
-| Email Header & Protocol Analysis | `ml-service/app/header_parser.py` — SPF/DKIM/DMARC, Return-Path/Reply-To mismatch, relay-chain anomalies |
-| Origin Traceability & Location | `ml-service/app/geolocation.py` — IP extraction, geolocation, WHOIS domain-age |
-| Identity Correlation & Attribution | `backend/src/lib/campaigns.js` — shared-attribute clustering into campaigns |
-| Alerting, Dashboard, Forensic Reporting | `frontend/src/pages/*` + `backend/src/routes/reports.js` |
-
----
-
-## 4. Honest Scope (Say this in your pitch)
-
-- VPN/Tor/botnet detection uses free-tier IP-org heuristics, not commercial threat-intel (Maxmind/GreyNoise). We flag "likely hosting/proxy," not confirmed anonymization infra.
-- Attribution output is an **investigative lead**, not a legal identification — final attribution needs subpoena power and telecom/ISP cooperation we don't have.
-- The LLM classifier is a strong first pass; for production use, it'd need fine-tuning on a larger labeled BEC corpus than what's publicly available.
+1. Create a Supabase project.
+2. Open SQL Editor and run `supabase/schema.sql`.
+3. Copy Supabase project credentials and JWT secret into `backend/.env`.
