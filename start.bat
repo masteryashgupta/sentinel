@@ -51,20 +51,12 @@ echo.
 echo Starting Sentinel Services in separate windows...
 echo.
 
-:: Start Frontend (React/Vite)
-echo - Launching Frontend...
-start "Sentinel Frontend" cmd /c "cd frontend && npm run dev"
-
-:: Start Backend (Node/Express)
-echo - Launching Backend...
-start "Sentinel Backend" cmd /c "cd backend && npm run dev"
-
-:: Start ML Service (Python/FastAPI)
-echo - Launching ML Service...
-start "Sentinel ML Service" cmd /c "cd backend\ml-service && if exist venv\Scripts\activate (call venv\Scripts\activate && uvicorn app.main:app --host 0.0.0.0 --port 8000) else (echo [ERROR] Virtual environment not found. Please run 'python -m venv venv' and install requirements.txt first. && pause)"
+:: Start all services in a single Windows Terminal with tabs
+echo - Launching services in Windows Terminal...
+wt -w 0 nt --title "Sentinel Frontend" -d frontend cmd /k "npm run dev" ; nt --title "Sentinel Backend" -d backend cmd /k "npm run dev" ; nt --title "Sentinel ML Service" -d backend\ml-service cmd /k "if exist venv\Scripts\activate (call venv\Scripts\activate && uvicorn app.main:app --host 0.0.0.0 --port 8000) else (echo [ERROR] Virtual environment not found. && pause)"
 
 echo.
-echo [SUCCESS] Sentinel is booting up!
+echo [SUCCESS] Sentinel is booting up in Windows Terminal!
 echo - Frontend: http://localhost:5173
 echo - Backend API: http://localhost:4000
 echo - ML Service: http://localhost:8000
