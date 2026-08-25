@@ -1,7 +1,7 @@
 import express from "express";
 import { google } from "googleapis";
 import { getOAuthClient } from "../lib/googleOAuth.js";
-import { supabase } from "../lib/supabase.js";
+import { supabase, supabaseAdmin } from "../lib/supabase.js";
 import { analyzeRawEmail } from "./cases.js";
 import crypto from "crypto";
 import { requireAuth } from "../lib/requireAuth.js";
@@ -41,12 +41,11 @@ router.get("/oauth/callback", async (req, res) => {
     const { createUserClient } = await import("../lib/supabase.js");
     const userClient = createUserClient(req.token || ""); // Callback might not have token, but wait, this is a redirect!
     // Since callback is a browser redirect, req.token is undefined. We must rely on state (userId).
-    // So we use service role here, but with strict .eq() filtering.
-    // Or we can just insert with the user_id derived from state.
+    // We use service role (supabaseAdmin) here to bypass RLS.
     
-    await supabase.from("gmail_connections").delete().eq("user_id", state);
+    await supabaseAdmin.from("gmail_connections").delete().eq("user_id", state);
 
-    const { error } = await supabase.from("gmail_connections").insert({
+    const { error } = await supabaseAdmin.from("gmail_connections").insert({
       user_id: state,
       email_address: emailAddress,
       access_token: tokens.access_token,

@@ -131,10 +131,10 @@ export default function Layout({ children }) {
     <>
       <div className="px-6 py-6 border-b border-[var(--border)] flex flex-col justify-center h-20 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)] animate-pulse" />
-          <span className="text-[var(--accent)] font-bold tracking-widest text-sm">SENTINEL</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)] shadow-[0_0_12px_var(--accent)] animate-pulse" />
+          <span className="text-[var(--text-primary)] font-display font-bold tracking-widest text-lg">SENTINEL</span>
         </div>
-        <p className="text-[10px] text-[var(--text-muted)] mt-1.5 leading-tight font-semibold">
+        <p className="text-[10px] text-[var(--accent)] mt-1.5 leading-tight font-semibold tracking-wider">
           EMAIL FORENSIC INTELLIGENCE
         </p>
       </div>
@@ -220,12 +220,13 @@ export default function Layout({ children }) {
   );
 
   return (
-    <div className="min-h-screen flex bg-[var(--bg-primary)] text-[var(--text-primary)] font-mono selection:bg-[var(--accent-soft)]">
+    <div className="min-h-screen flex bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent-soft)] selection:text-[var(--accent)]">
       
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex-col z-20 relative">
+      <aside className="hidden md:flex w-64 border-r border-[var(--border)] glass-panel flex-col z-20 relative shadow-[0_0_40px_rgba(0,0,0,0.5)]">
         <SidebarContent />
       </aside>
+
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
@@ -236,7 +237,7 @@ export default function Layout({ children }) {
       )}
 
       {/* Mobile Sidebar Drawer */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-[var(--bg-panel)] z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col border-r border-[var(--border)] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 w-64 glass-panel z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col border-r border-[var(--border)] shadow-[0_0_40px_rgba(0,0,0,0.5)] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <SidebarContent />
       </aside>
 
@@ -244,7 +245,7 @@ export default function Layout({ children }) {
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative min-w-0">
         
         {/* Top Bar */}
-        <header className="h-20 border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-4 md:px-8 shrink-0 z-10">
+        <header className="h-20 border-b border-[var(--border)] glass-panel flex items-center justify-between px-4 md:px-8 shrink-0 z-10 sticky top-0">
           
           {/* Breadcrumb / Title & Mobile Menu Button */}
           <div className="flex items-center gap-3">
@@ -258,7 +259,7 @@ export default function Layout({ children }) {
               <span className="text-[var(--text-muted)] text-sm font-medium tracking-wide uppercase">Sentinel</span>
               <span className="text-[var(--border)]">/</span>
             </div>
-            <span className="text-[var(--text-primary)] text-sm md:text-base font-bold tracking-wide uppercase">
+            <span className="text-[var(--text-primary)] text-sm md:text-lg font-display font-bold tracking-wide uppercase">
               {currentTitle}
             </span>
           </div>
@@ -275,8 +276,8 @@ export default function Layout({ children }) {
         </header>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto scanline relative bg-[var(--bg-primary)]">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto relative bg-transparent scroll-smooth">
+          <div className="p-4 md:p-8 max-w-7xl mx-auto animate-page-in">
             {children}
           </div>
         </main>

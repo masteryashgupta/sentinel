@@ -170,7 +170,7 @@ export default function Dashboard() {
         {/* Main Column: Recent Cases */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">Recent Cases</h2>
+            <h2 className="text-xl font-display font-bold text-[var(--text-primary)]">Recent Cases</h2>
             <Link to="/cases" className="text-sm font-medium text-[var(--accent)] hover:text-[var(--accent-dim)] flex items-center gap-1">
               View all <ArrowRight size={16} />
             </Link>
@@ -181,12 +181,12 @@ export default function Dashboard() {
               <div className="w-16 h-16 rounded-full bg-[var(--bg-subtle)] flex items-center justify-center text-[var(--text-muted)] mb-4">
                 <Search size={32} />
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No cases found</h3>
+              <h3 className="text-xl font-display font-semibold text-[var(--text-primary)] mb-2">No cases found</h3>
               <p className="text-[var(--text-secondary)] mb-6 max-w-sm">
                 Get started by analyzing your first suspicious email to populate the dashboard.
               </p>
               <Link to="/analyze">
-                <button className="bg-[var(--accent)] text-white px-6 py-2.5 rounded-md font-medium hover:bg-[var(--accent-dim)] transition-colors">
+                <button className="bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dim)] text-white px-6 py-2.5 rounded-md font-medium hover:shadow-glow transition-all hover:-translate-y-0.5">
                   Analyze Email
                 </button>
               </Link>
@@ -220,26 +220,27 @@ export default function Dashboard() {
         {/* Sidebar Column: CTA and Chart */}
         <div className="space-y-6">
           {/* CTA Card */}
-          <Card className="p-6 bg-gradient-to-br from-[var(--bg-panel)] to-[var(--accent-soft)] border-[var(--accent-soft)]">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-[var(--accent)] text-white rounded-lg">
+          <Card className="p-6 bg-gradient-to-br from-[var(--bg-panel)] to-[var(--accent-soft)] border-[var(--accent-soft)] relative overflow-hidden group">
+            <div className="absolute inset-0 bg-[var(--accent)] opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none" />
+            <div className="flex items-center gap-4 mb-4 relative z-10">
+              <div className="p-3 bg-[var(--accent)] text-white rounded-lg shadow-glow">
                 <UploadCloud size={24} />
               </div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">Analyze Email</h3>
+              <h3 className="text-xl font-display font-bold text-[var(--text-primary)]">Analyze Email</h3>
             </div>
-            <p className="text-sm text-[var(--text-secondary)] mb-6">
+            <p className="text-sm text-[var(--text-secondary)] mb-6 relative z-10">
               Upload an EML or MSG file for deep forensic analysis, fraud classification, and origin tracing.
             </p>
-            <Link to="/analyze" className="block w-full">
-              <button className="w-full bg-[var(--accent)] text-white py-2.5 rounded-md font-medium hover:bg-[var(--accent-dim)] transition-colors flex items-center justify-center gap-2">
-                Start Analysis <ArrowRight size={18} />
+            <Link to="/analyze" className="block w-full relative z-10">
+              <button className="w-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent-dim)] text-white py-2.5 rounded-md font-medium hover:shadow-glow transition-all flex items-center justify-center gap-2 group/btn">
+                Start Analysis <ArrowRight size={18} className="transition-transform group-hover/btn:translate-x-1" />
               </button>
             </Link>
           </Card>
 
           {/* Risk Distribution Chart */}
           <Card className="p-6">
-            <h3 className="text-base font-bold text-[var(--text-primary)] mb-6">Risk Distribution</h3>
+            <h3 className="text-lg font-display font-bold text-[var(--text-primary)] mb-6">Risk Distribution</h3>
             <div className="flex flex-col items-center">
               <div className="mb-8">
                 <DonutChart data={data.riskDistribution} size={160} strokeWidth={24} />

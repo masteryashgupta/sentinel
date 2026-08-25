@@ -7,7 +7,7 @@ export default function Card({ children, className = "", hoverable = false, ...p
 
   return (
     <div 
-      className={`bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl shadow-[0_2px_8px_var(--shadow)] overflow-hidden ${hoverStyles} ${className}`}
+      className={`glass-card rounded-xl overflow-hidden ${hoverStyles} ${className}`}
       {...props}
     >
       {children}
