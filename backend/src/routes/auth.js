@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { supabase } from '../lib/supabase.js';
+import { supabase, supabaseAdmin } from '../lib/supabase.js';
 import { requireAuth } from '../lib/requireAuth.js';
 
 const router = express.Router();
@@ -28,7 +28,7 @@ router.post('/signup', async (req, res) => {
     const emailLower = email.toLowerCase();
     
     // Check if user exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', emailLower)
@@ -43,7 +43,7 @@ router.post('/signup', async (req, res) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     // Insert user
-    const { data: newUser, error } = await supabase
+    const { data: newUser, error } = await supabaseAdmin
       .from('users')
       .insert({ email: emailLower, password_hash })
       .select('id, email, created_at, last_login_at')
@@ -69,7 +69,7 @@ router.post('/login', async (req, res) => {
     const emailLower = email.toLowerCase();
     
     // Find user
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('email', emailLower)
@@ -86,7 +86,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Update last login
-    await supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
+    await supabaseAdmin.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
 
     // Remove password_hash from response
     delete user.password_hash;
@@ -101,7 +101,7 @@ router.post('/login', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email, created_at, last_login_at')
       .eq('id', req.userId)

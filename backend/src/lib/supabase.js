@@ -4,6 +4,7 @@ dotenv.config();
 
 const supabaseUrl = (process.env.SUPABASE_URL || "").replace(/^"|"$/g, "");
 const supabaseKey = (process.env.SUPABASE_KEY || "").replace(/^"|"$/g, "");
+const supabaseServiceRole = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").replace(/^"|"$/g, "");
 
 if (!supabaseUrl || !supabaseKey) {
   console.warn(
@@ -14,6 +15,11 @@ if (!supabaseUrl || !supabaseKey) {
 export const supabase = createClient(
   supabaseUrl || "https://dummy.supabase.co", 
   supabaseKey || "dummy"
+);
+
+export const supabaseAdmin = createClient(
+  supabaseUrl || "https://dummy.supabase.co",
+  supabaseServiceRole || "dummy"
 );
 
 export const createUserClient = (token) => {
