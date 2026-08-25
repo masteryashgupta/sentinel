@@ -91,7 +91,7 @@ app.use("/api/reports", requireAuth, reportsRouter);
 app.use("/api/blacklist", requireAuth, blacklistRouter);
 app.use("/api/alerts", requireAuth, alertsRouter);
 app.use("/api/retention", requireAuth, retentionRouter);
-app.use("/api/gmail", requireAuth, gmailRouter);
+app.use("/api/gmail", gmailRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });

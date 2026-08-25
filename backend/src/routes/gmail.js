@@ -4,10 +4,11 @@ import { getOAuthClient } from "../lib/googleOAuth.js";
 import { supabase } from "../lib/supabase.js";
 import { analyzeRawEmail } from "./cases.js";
 import crypto from "crypto";
+import { requireAuth } from "../lib/requireAuth.js";
 
 const router = express.Router();
 
-router.get("/auth", (req, res) => {
+router.get("/auth", requireAuth, (req, res) => {
   const state = req.userId; // encode user ID in state so callback knows who it is
   const oauth2Client = getOAuthClient();
   const url = oauth2Client.generateAuthUrl({
@@ -62,7 +63,7 @@ router.get("/oauth/callback", async (req, res) => {
   }
 });
 
-router.get("/status", async (req, res) => {
+router.get("/status", requireAuth, async (req, res) => {
   const { createUserClient } = await import("../lib/supabase.js");
   const userClient = createUserClient(req.token);
 
@@ -80,7 +81,7 @@ router.get("/status", async (req, res) => {
   res.json({ connected: true, email: data.email_address, lastSynced: null });
 });
 
-router.post("/disconnect", async (req, res) => {
+router.post("/disconnect", requireAuth, async (req, res) => {
   const { createUserClient } = await import("../lib/supabase.js");
   const userClient = createUserClient(req.token);
 
@@ -97,7 +98,7 @@ router.post("/disconnect", async (req, res) => {
   res.json({ success: true });
 });
 
-router.get("/inbox", async (req, res) => {
+router.get("/inbox", requireAuth, async (req, res) => {
   try {
     const { createUserClient } = await import("../lib/supabase.js");
     const userClient = createUserClient(req.token);
@@ -179,7 +180,7 @@ router.get("/inbox", async (req, res) => {
   }
 });
 
-router.post("/analyze/:id", async (req, res) => {
+router.post("/analyze/:id", requireAuth, async (req, res) => {
   try {
     const { createUserClient } = await import("../lib/supabase.js");
     const userClient = createUserClient(req.token);
