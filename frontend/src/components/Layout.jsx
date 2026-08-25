@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Settings, Menu, X, Mail, LogOut } from "lucide-react";
+import { LayoutDashboard, Activity, Search, Network, Zap, ShieldAlert, Menu, X, Mail, LogOut } from "lucide-react";
 import { listAlerts, fetchSystemStatus } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -125,7 +125,6 @@ export default function Layout({ children }) {
     const found = group.items.find(item => item.to === location.pathname);
     if (found) currentTitle = found.label;
   }
-  if (location.pathname === "/settings") currentTitle = "Settings";
 
   const SidebarContent = () => (
     <>
@@ -186,26 +185,6 @@ export default function Layout({ children }) {
       </nav>
 
       <div className="p-4 border-t border-[var(--border)] shrink-0">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `group flex items-center justify-between px-3 py-2.5 rounded-md text-sm transition-all duration-300 relative overflow-hidden ${
-              isActive
-                ? "text-[var(--accent)] bg-[var(--accent-soft)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <div className="flex items-center gap-3 z-10">
-                <Settings size={18} className={`transition-transform duration-300 ${isActive ? 'scale-110 rotate-45' : 'group-hover:scale-110 group-hover:rotate-45'}`} />
-                <span className="font-medium tracking-wide">Settings</span>
-              </div>
-              <div className={`absolute left-0 top-0 bottom-0 w-1 bg-[var(--accent)] transition-transform duration-300 origin-left ${isActive ? 'scale-y-100' : 'scale-y-0'}`} />
-            </>
-          )}
-        </NavLink>
         {user && (
           <button
             onClick={logout}

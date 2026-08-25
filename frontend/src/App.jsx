@@ -8,7 +8,6 @@ import Campaigns from "./pages/Campaigns";
 import CampaignDetail from "./pages/CampaignDetail";
 import Blacklist from "./pages/Blacklist";
 import Alerts from "./pages/Alerts";
-import Settings from "./pages/Settings";
 import GmailSync from "./pages/GmailSync";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -39,7 +38,6 @@ export default function App() {
                 <Route path="/campaigns/:id" element={<CampaignDetail />} />
                 <Route path="/blacklist" element={<Blacklist />} />
                 <Route path="/alerts" element={<Alerts />} />
-                <Route path="/settings" element={<Settings />} />
               </Routes>
             </Layout>
           </ProtectedRoute>
