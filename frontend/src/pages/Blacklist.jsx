@@ -97,6 +97,12 @@ export default function Blacklist() {
         <p className="text-[var(--text-secondary)] mt-2 max-w-3xl">
           Manage known malicious IPs, domains, DKIM keys, and URLs. Analyzed emails matching any entry will be immediately flagged as high risk.
         </p>
+        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-start gap-2 max-w-3xl text-sm text-blue-200">
+          <Shield className="text-blue-500 shrink-0 mt-0.5" size={16} />
+          <p>
+            <strong>Note on IP Blocking:</strong> IP blocking here means future emails from this IP will be auto-flagged and auto-spammed by our own analysis pipeline. This cannot block mail at the network/mail-server level, only within emails processed through Sentinel.
+          </p>
+        </div>
       </header>
 
       <Card className="p-6 md:p-8 border-[var(--border)] shadow-sm">

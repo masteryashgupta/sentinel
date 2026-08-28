@@ -5,8 +5,8 @@ import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
 import Spinner from "../components/ui/Spinner";
 import Toast from "../components/ui/Toast";
-import { getGmailAuthUrl, getGmailStatus, disconnectGmail, fetchGmailInbox, analyzeGmailMessage, addBlacklist } from "../lib/api";
-import { Mail, Unplug, CheckCircle, Play, FileSearch } from "lucide-react";
+import { getGmailAuthUrl, getGmailStatus, disconnectGmail, fetchGmailInbox, analyzeGmailMessage, addBlacklist, updateGmailSettings } from "../lib/api";
+import { Mail, Unplug, CheckCircle, Play, FileSearch, AlertTriangle } from "lucide-react";
 
 export default function GmailSync() {
   const [status, setStatus] = useState(null);
@@ -29,10 +29,10 @@ export default function GmailSync() {
     const params = new URLSearchParams(location.search);
     if (params.get("connected") === "true") {
       setToast({ message: "Gmail connected successfully!", type: "success" });
-      window.history.replaceState({}, document.title, location.pathname);
+      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (params.get("error")) {
       setToast({ message: "Failed to connect to Gmail.", type: "error" });
-      window.history.replaceState({}, document.title, location.pathname);
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
 
     fetchStatus();
@@ -52,6 +52,9 @@ export default function GmailSync() {
     try {
       const data = await getGmailStatus();
       setStatus(data);
+      if (data.requiresReconnect) {
+        setToast({ message: "Permissions updated. Please reconnect Gmail.", type: "error" });
+      }
     } catch (e) {
       console.error(e);
       setToast({ message: "Failed to load Gmail status", type: "error" });
@@ -145,6 +148,19 @@ export default function GmailSync() {
       }
   };
 
+  const handleToggleAutoSpam = async () => {
+    const newVal = !status.auto_spam_enabled;
+    setStatus(prev => ({ ...prev, auto_spam_enabled: newVal }));
+    try {
+      await updateGmailSettings(newVal);
+      setToast({ message: `Auto-spam ${newVal ? 'enabled' : 'disabled'}`, type: "success" });
+    } catch (e) {
+      // revert
+      setStatus(prev => ({ ...prev, auto_spam_enabled: !newVal }));
+      setToast({ message: "Failed to update setting", type: "error" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -184,12 +200,31 @@ export default function GmailSync() {
                     <p className="text-[var(--text-secondary)] text-sm">{status.email}</p>
                 </div>
                 </div>
-                <div className="flex items-center gap-3">
-                <Button variant="danger" onClick={handleDisconnect}>
-                    <Unplug size={16} /> Disconnect
-                </Button>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer border border-[var(--border)] px-3 py-1.5 rounded-md">
+                    <span className="text-sm font-medium text-[var(--text-secondary)]" title="High-risk emails will be automatically moved to Spam">Auto-Spam High Risk</span>
+                    <div 
+                        className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors ${status.auto_spam_enabled ? 'bg-red-600' : 'bg-[var(--border)]'}`}
+                        onClick={handleToggleAutoSpam}
+                    >
+                        <div className={`bg-white w-3 h-3 rounded-full shadow-md transform transition-transform ${status.auto_spam_enabled ? 'translate-x-5' : ''}`}></div>
+                    </div>
+                  </label>
+                  <Button variant="danger" onClick={handleDisconnect}>
+                      <Unplug size={16} /> Disconnect
+                  </Button>
                 </div>
             </div>
+            
+            {status.requiresReconnect && (
+              <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-start gap-3">
+                <AlertTriangle className="text-orange-500 shrink-0 mt-0.5" size={18} />
+                <div className="text-sm text-orange-200">
+                  <p className="font-semibold text-orange-400">Action Required: Reconnect Gmail</p>
+                  <p className="mt-1">Sentinel has added new automated spam and blocking capabilities. To enable these features, you must disconnect and reconnect your Gmail account to grant the required permissions.</p>
+                </div>
+              </div>
+            )}
             </Card>
 
             <Card>

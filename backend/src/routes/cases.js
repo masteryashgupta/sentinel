@@ -46,6 +46,9 @@ export async function analyzeRawEmail(buffer, filename, userClient, userId) {
   if (analysis.email?.sender_domain) {
     indicatorsToCheck.push({ type: 'domain', value: analysis.email.sender_domain });
   }
+  if (analysis.origin?.ip) {
+    indicatorsToCheck.push({ type: 'ip', value: analysis.origin.ip });
+  }
 
   const matchesBlacklist = await checkBlacklist(indicatorsToCheck, userClient);
 

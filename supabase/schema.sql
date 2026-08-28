@@ -113,15 +113,7 @@ alter table campaigns enable row level security;
 alter table campaign_cases enable row level security;
 alter table audit_log enable row level security;
 
-create policy "allow all - demo" on cases for all using (true) with check (true);
-create policy "allow all - demo" on alerts for all using (true) with check (true);
-create policy "allow all - demo" on known_bad_indicators for all using (true) with check (true);
-create policy "allow all - demo" on indicators for all using (true) with check (true);
-create policy "allow all - demo" on campaigns for all using (true) with check (true);
-create policy "allow all - demo" on campaign_cases for all using (true) with check (true);
-create policy "allow all - demo" on audit_log for all using (true) with check (true);
-
--- Gmail Integration
+-- Gmail Integration
 create table if not exists gmail_connections (
   id uuid primary key default uuid_generate_v4(),
   email_address text,
@@ -129,7 +121,8 @@ create table if not exists gmail_connections (
   refresh_token text,
   token_expiry timestamptz,
   connected_at timestamptz default now(),
-  last_synced_at timestamptz
+  last_synced_at timestamptz,
+  auto_spam_enabled boolean default true
 );
 
 alter table cases add column if not exists gmail_message_id text;
@@ -138,10 +131,6 @@ create unique index if not exists idx_cases_gmail_message_id
 
 alter table gmail_connections enable row level security;
 create policy "allow all - demo" on gmail_connections for all using (true) with check (true);
-
--- --------------------------------------------------------------------------------
--- CUSTOM JWT AUTH & ROW LEVEL SECURITY (RLS)
--- --------------------------------------------------------------------------------
 
 create table if not exists users (
   id uuid primary key default uuid_generate_v4(),

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network, Cpu } from "lucide-react";
-import { getCase, updateCaseStatus, downloadReport, getCaseAuditLog, getCaseAISummary } from "../lib/api";
+import { ArrowLeft, Download, ExternalLink, ShieldAlert, Check, Clock, AlertTriangle, Network, Cpu, Ban } from "lucide-react";
+import { getCase, updateCaseStatus, downloadReport, getCaseAuditLog, getCaseAISummary, blockSender } from "../lib/api";
+import { useToast } from "../context/ToastContext";
+import { createPortal } from "react-dom";
 import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -19,6 +21,11 @@ export default function CaseDetail() {
   const [role, setRole] = useState("investigator");
   const [aiSummary, setAiSummary] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const { addToast } = useToast();
+
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
+  const [blockIpToo, setBlockIpToo] = useState(false);
+  const [blocking, setBlocking] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +76,7 @@ export default function CaseDetail() {
     try {
       const updated = await updateCaseStatus(id, status, "analyst");
       setC((prev) => ({ ...prev, ...updated }));
-      getCaseAuditLog(id).then(setAuditLog).catch(() => {});
+      getCaseAuditLog(id).then(setAuditLog).catch(() => { });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -81,6 +88,21 @@ export default function CaseDetail() {
     if (score >= 80) return <Badge variant="danger">High Risk ({score})</Badge>;
     if (score >= 40) return <Badge variant="warning">Suspicious ({score})</Badge>;
     return <Badge variant="success">Legitimate ({score})</Badge>;
+  };
+
+  const handleBlockSender = async () => {
+    setBlocking(true);
+    try {
+      const emailMatch = c.from_address;
+      await blockSender(emailMatch, blockIpToo, c.origin_ip, id);
+      addToast("Sender blocked successfully", "success");
+      setShowBlockDialog(false);
+      getCaseAuditLog(id).then(setAuditLog).catch(() => { });
+    } catch (e) {
+      addToast(e.message || "Failed to block sender", "error");
+    } finally {
+      setBlocking(false);
+    }
   };
 
   if (loading || !c) {
@@ -123,7 +145,7 @@ export default function CaseDetail() {
   const anomalies = c.header_anomalies || [];
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link to="/cases" className="text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors">
           <ArrowLeft size={16} /> Back to cases
@@ -181,16 +203,24 @@ export default function CaseDetail() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button 
-          variant="primary" 
-          icon={Download} 
+        <Button
+          variant="primary"
+          icon={Download}
           onClick={() => {
             downloadReport(c.id).catch(e => setError("Failed to download report: " + e.message));
           }}
         >
           Download Report (PDF)
         </Button>
-        
+
+        <Button
+          variant="danger"
+          icon={Ban}
+          onClick={() => setShowBlockDialog(true)}
+        >
+          Block Sender
+        </Button>
+
         <div className="flex items-center gap-2 bg-[var(--bg-panel)] border border-[var(--border)] rounded-md px-3 py-1.5 shadow-sm">
           <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Status:</span>
           <select
@@ -212,7 +242,7 @@ export default function CaseDetail() {
             </Button>
           </Link>
         )}
-        
+
         {c.retention_days && (
           <Badge variant="neutral" className="py-2 px-3 text-sm flex items-center gap-1.5">
             <Clock size={14} /> Retention: {c.retention_days}d
@@ -354,7 +384,7 @@ export default function CaseDetail() {
               Immutable audit trail required for evidence admissibility and PS 26106 compliance.
             </p>
           </div>
-          
+
           {auditLog.length === 0 ? (
             <p className="text-sm text-[var(--text-muted)] py-4 text-center">No audit events yet.</p>
           ) : (
@@ -389,6 +419,46 @@ export default function CaseDetail() {
           )}
         </Card>
       </div>
+
+      {showBlockDialog && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999]">
+          <Card className="w-full max-w-md p-6 space-y-6 animate-in fade-in zoom-in-95 duration-200 shadow-2xl border-[var(--danger)]">
+            <div>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Ban className="text-[var(--danger)]" /> Block Sender
+              </h3>
+              <p className="text-[var(--text-secondary)] mt-2 text-sm">
+                This will create a permanent Gmail filter to mark future emails from <strong className="text-[var(--text-primary)]">{c.from_address}</strong> as Spam. It will also add the sender to Sentinel's internal blacklist.
+              </p>
+            </div>
+
+            {c.origin_ip && (
+              <label className="flex items-start gap-3 p-3 border border-[var(--border)] rounded-lg cursor-pointer hover:bg-[var(--bg-subtle)] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={blockIpToo}
+                  onChange={(e) => setBlockIpToo(e.target.checked)}
+                  className="mt-1"
+                />
+                <div className="text-sm">
+                  <p className="font-semibold text-[var(--text-primary)]">Block Origin IP too</p>
+                  <p className="text-[var(--text-secondary)] mt-0.5">({c.origin_ip}) Sentinel will auto-spam future emails originating from this IP.</p>
+                </div>
+              </label>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border)]">
+              <Button variant="secondary" onClick={() => setShowBlockDialog(false)} disabled={blocking}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={handleBlockSender} disabled={blocking}>
+                {blocking ? "Blocking..." : "Confirm Block"}
+              </Button>
+            </div>
+          </Card>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

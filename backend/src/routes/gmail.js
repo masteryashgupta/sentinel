@@ -14,7 +14,10 @@ router.get("/auth", requireAuth, (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
-    scope: ["https://www.googleapis.com/auth/gmail.readonly"],
+    scope: [
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.settings.basic"
+    ],
     state: state,
   });
   res.json({ url });
@@ -68,7 +71,7 @@ router.get("/status", requireAuth, async (req, res) => {
 
   const { data, error } = await userClient
     .from("gmail_connections")
-    .select("id, email_address, created_at")
+    .select("id, email_address, created_at, access_token, auto_spam_enabled")
     .eq("user_id", req.userId)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -77,7 +80,33 @@ router.get("/status", requireAuth, async (req, res) => {
   if (error || !data) {
     return res.json({ connected: false });
   }
-  res.json({ connected: true, email: data.email_address, lastSynced: null });
+
+  let requiresReconnect = false;
+  try {
+    const oauth2Client = getOAuthClient();
+    const tokenInfo = await oauth2Client.getTokenInfo(data.access_token);
+    
+    const requiredScopes = [
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.settings.basic"
+    ];
+    
+    if (!tokenInfo.scopes || !requiredScopes.every(s => tokenInfo.scopes.includes(s))) {
+      requiresReconnect = true;
+    }
+  } catch (e) {
+    console.warn("Failed to check token info scopes:", e);
+    // If token is expired or invalid, we can just return requiresReconnect = true
+    requiresReconnect = true;
+  }
+
+  res.json({ 
+    connected: true, 
+    email: data.email_address, 
+    lastSynced: null,
+    requiresReconnect,
+    auto_spam_enabled: data.auto_spam_enabled 
+  });
 });
 
 router.post("/disconnect", requireAuth, async (req, res) => {
@@ -217,10 +246,108 @@ router.post("/analyze/:id", requireAuth, async (req, res) => {
     const result = await analyzeRawEmail(rawBuffer, `gmail_${messageId}.eml`, userClient, req.userId);
     
     await userClient.from("cases").update({ gmail_message_id: messageId }).eq("id", result.case.id);
+    
+    // Auto-spam logic
+    if (result.case.fraud_score >= 75 && conn.auto_spam_enabled) {
+      try {
+        await gmail.users.messages.modify({
+          userId: "me",
+          id: messageId,
+          requestBody: {
+            removeLabelIds: ["INBOX"],
+            addLabelIds: ["SPAM"]
+          }
+        });
+        
+        // Log action in audit_log
+        await userClient.from("audit_log").insert({
+          case_id: result.case.id,
+          action: "auto_marked_spam",
+          actor: "system",
+          details: { fraud_score: result.case.fraud_score }
+        });
+        
+      } catch (e) {
+        console.error(`Failed to auto-spam message ${messageId}:`, e);
+      }
+    }
+    
     res.json({ case: result.case, analysis: result.analysis, campaign_id: result.campaign_id });
   } catch (err) {
     console.error(`Failed to analyze email ${req.params.id}:`, err);
     res.status(500).json({ error: "Analysis failed", detail: err.message });
+  }
+});
+
+router.patch("/settings", requireAuth, async (req, res) => {
+  const { createUserClient } = await import("../lib/supabase.js");
+  const userClient = createUserClient(req.token);
+  
+  const { auto_spam_enabled } = req.body;
+  if (typeof auto_spam_enabled !== "boolean") {
+    return res.status(400).json({ error: "Invalid auto_spam_enabled value" });
+  }
+
+  const { data, error } = await userClient
+    .from("gmail_connections")
+    .update({ auto_spam_enabled })
+    .eq("user_id", req.userId)
+    .select()
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true, auto_spam_enabled: data.auto_spam_enabled });
+});
+
+router.post("/block-sender", requireAuth, async (req, res) => {
+  try {
+    const { email_address, block_ip, origin_ip, case_id } = req.body;
+    if (!email_address) return res.status(400).json({ error: "email_address required" });
+
+    const { createUserClient } = await import("../lib/supabase.js");
+    const userClient = createUserClient(req.token);
+
+    // Get Gmail connection for OAuth client
+    const { data: conn } = await userClient.from("gmail_connections").select("*").eq("user_id", req.userId).limit(1).maybeSingle();
+    if (!conn) return res.status(400).json({ error: "Not connected to Gmail" });
+
+    const auth = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+    auth.setCredentials({ access_token: conn.access_token, refresh_token: conn.refresh_token, expiry_date: conn.token_expiry ? new Date(conn.token_expiry).getTime() : null });
+    const gmail = google.gmail({ version: "v1", auth });
+
+    // Create filter in Gmail
+    await gmail.users.settings.filters.create({
+      userId: "me",
+      requestBody: {
+        criteria: { from: email_address },
+        action: { removeLabelIds: ["INBOX"], addLabelIds: ["TRASH"] }
+      }
+    });
+
+    // Add to known_bad_indicators (blacklist)
+    const indicators = [{ type: "email", value: email_address, source: "user_blocked" }];
+    if (block_ip && origin_ip) {
+      indicators.push({ type: "ip", value: origin_ip, source: "user_blocked" });
+    }
+    
+    // Using userClient to ensure RLS compliance and attach user_id implicitly or explicitly
+    const insertData = indicators.map(i => ({ ...i, user_id: req.userId }));
+    await userClient.from("known_bad_indicators").insert(insertData);
+
+    // Audit log
+    if (case_id) {
+      await userClient.from("audit_log").insert({
+        case_id,
+        action: "blocked_sender",
+        actor: req.userId,
+        details: { email_address, blocked_ip: block_ip ? origin_ip : null }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Failed to block sender:", err);
+    res.status(500).json({ error: "Failed to block sender", detail: err.message });
   }
 });
 

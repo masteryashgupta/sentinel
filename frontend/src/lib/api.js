@@ -208,3 +208,30 @@ export async function analyzeGmailMessage(id) {
   }
   return res.json();
 }
+
+export async function updateGmailSettings(auto_spam_enabled) {
+  const res = await fetchWithAuth(`${API_URL}/api/gmail/settings`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ auto_spam_enabled }),
+  });
+  if (!res.ok) throw new Error("Failed to update Gmail settings");
+  return res.json();
+}
+
+export async function blockSender(email_address, block_ip, origin_ip, case_id) {
+  const res = await fetchWithAuth(`${API_URL}/api/gmail/block-sender`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email_address, block_ip, origin_ip, case_id }),
+  });
+  if (!res.ok) {
+    let msg = "Failed to block sender";
+    try {
+      const errData = await res.json();
+      msg = errData.detail || errData.error || msg;
+    } catch(e) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
