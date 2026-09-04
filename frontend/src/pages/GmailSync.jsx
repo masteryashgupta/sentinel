@@ -42,7 +42,7 @@ export default function GmailSync() {
      let interval;
      if (status?.connected) {
          loadInbox(); // initial load
-         interval = setInterval(loadInbox, 30000); // 30s auto-refresh
+         interval = setInterval(loadInbox, 20000); // 20s auto-refresh
      }
      return () => clearInterval(interval);
   }, [status?.connected]);
